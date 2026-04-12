@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
@@ -38,19 +38,11 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [extraSets, setExtraSets] = useState(3)
   const [extraReps, setExtraReps] = useState(10)
 
-  // Debounced data change — syncs to other views after a pause
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const debouncedDataChange = useCallback(() => {
-    if (syncTimer.current) clearTimeout(syncTimer.current)
-    syncTimer.current = setTimeout(() => onDataChange?.(), 800)
-  }, [onDataChange])
-  useEffect(() => () => { if (syncTimer.current) clearTimeout(syncTimer.current) }, [])
-
   // Habit toggle
   const handleHabitToggle = async (habitId: number) => {
     if (pendingHabitToggles.has(habitId)) return
     setPendingHabitToggles((prev) => new Set(prev).add(habitId))
-    try { await toggleCompletion(habitId, date); onDataChange?.() }
+    try { await toggleCompletion(habitId, date) }
     finally { setPendingHabitToggles((prev) => { const n = new Set(prev); n.delete(habitId); return n }) }
   }
 
@@ -86,7 +78,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     await addExtraExercise(workoutId, date, ex)
     setAddingExtraFor(null)
     setExtraName(''); setExtraSets(3); setExtraReps(10)
-    onDataChange?.()
+    onDataChange?.() // reload to show the new exercise
   }
 
   // Optimistic local state for extra exercise toggles
@@ -105,7 +97,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     next.has(extraIndex) ? next.delete(extraIndex) : next.add(extraIndex)
     setLocalExtraOverrides((prev) => new Map(prev).set(key, next))
     await toggleExtraExercise(workoutId, date, extraIndex)
-    debouncedDataChange()
   }
 
   const handleRemoveExtra = async (workoutId: number, extraIndex: number) => {
@@ -125,7 +116,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
     // Persist to DB, debounce sync to other views
     await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
-    debouncedDataChange()
   }
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
