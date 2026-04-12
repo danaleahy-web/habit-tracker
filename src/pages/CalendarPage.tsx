@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCalendarData } from '../hooks/useCalendarData'
 import { MonthView } from '../components/calendar/MonthView'
 import { WeekView } from '../components/calendar/WeekView'
@@ -8,15 +9,33 @@ import {
   startOfWeek, endOfWeek, startOfYear, endOfYear,
   addMonths, addDays, addYears,
   formatMonthYear, formatWeekRange, formatDayFull, getMonthGrid,
+  toDateKey, fromDateKey,
 } from '../lib/dates'
 
 type ViewMode = 'day' | 'week' | 'month' | 'year'
 const VIEW_MODES: ViewMode[] = ['day', 'week', 'month', 'year']
 
+function isValidView(v: string | null): v is ViewMode {
+  return v === 'day' || v === 'week' || v === 'month' || v === 'year'
+}
+
 export function CalendarPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('day')
-  const [selectedDate, setSelectedDate] = useState(() => new Date())
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Restore state from URL or fall back to defaults
+  const initialView = isValidView(searchParams.get('view')) ? searchParams.get('view') as ViewMode : 'day'
+  const initialDateStr = searchParams.get('date')
+  const initialDate = initialDateStr ? fromDateKey(initialDateStr) : new Date()
+
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView)
+  const [selectedDate, setSelectedDate] = useState(() => initialDate)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Sync state changes back to URL (replace, don't push history)
+  useEffect(() => {
+    const params: Record<string, string> = { view: viewMode, date: toDateKey(selectedDate) }
+    setSearchParams(params, { replace: true })
+  }, [viewMode, selectedDate, setSearchParams])
 
   const { rangeStart, rangeEnd } = computeRange(viewMode, selectedDate)
   const data = useCalendarData(rangeStart, rangeEnd, refreshKey)
