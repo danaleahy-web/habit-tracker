@@ -26,76 +26,79 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
   }
 
   return (
-    <div className="px-1.5">
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day) => {
-          const key = toDateKey(day)
-          const today = isToday(day)
-          const completions = data.completions.get(key) || []
-          const activities = data.activities.get(key) || []
-          const uniqueHabitIds = [...new Set(completions.map((c) => c.habitId))]
+    <div className="space-y-0.5 px-2">
+      {days.map((day) => {
+        const key = toDateKey(day)
+        const today = isToday(day)
+        const completions = data.completions.get(key) || []
+        const activities = data.activities.get(key) || []
+        const uniqueHabitIds = [...new Set(completions.map((c) => c.habitId))]
 
-          return (
-            <button
-              key={key}
-              onClick={() => onSelectDay(day)}
-              className={`flex min-h-[110px] flex-col rounded-lg border p-1.5 text-left transition-colors ${
-                today
-                  ? 'border-ink/30 bg-ink/[0.03] dark:border-gray-500 dark:bg-gray-100/5'
-                  : 'border-border bg-paper hover:bg-background dark:border-border-dark dark:bg-paper-dark dark:hover:bg-background-dark'
-              }`}
-            >
-              {/* Day header */}
-              <div className="mb-1.5 text-center">
-                <div className="text-[9px] font-semibold uppercase tracking-wider text-muted">
-                  {DAY_NAMES_SHORT[day.getDay()]}
-                </div>
-                <div className={`text-lg font-bold leading-tight ${
-                  today ? 'text-ink dark:text-gray-100' : 'text-ink-light dark:text-gray-300'
-                }`}>
-                  {day.getDate()}
-                </div>
+        return (
+          <button
+            key={key}
+            onClick={() => onSelectDay(day)}
+            className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
+              today
+                ? 'border-ink/20 bg-ink/[0.03] dark:border-gray-500 dark:bg-gray-100/5'
+                : 'border-border bg-paper hover:bg-background dark:border-border-dark dark:bg-paper-dark dark:hover:bg-background-dark'
+            }`}
+          >
+            {/* Left: day label */}
+            <div className="w-10 shrink-0 pt-0.5 text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                {DAY_NAMES_SHORT[day.getDay()]}
               </div>
-
-              {/* Habit bullets */}
-              <div className="flex-1 space-y-0.5 overflow-hidden">
-                {uniqueHabitIds.slice(0, 4).map((hid) => {
-                  const habit = habitMap.get(hid)
-                  return (
-                    <div key={hid} className="flex items-center gap-1 truncate">
-                      <span className="text-[9px] text-ink dark:text-gray-400">{habit?.emoji || '·'}</span>
-                      <span className="truncate text-[8px] text-ink-light dark:text-gray-500">
-                        {habit?.name || 'Habit'}
-                      </span>
-                    </div>
-                  )
-                })}
-                {uniqueHabitIds.length > 4 && (
-                  <span className="text-[8px] text-muted">+{uniqueHabitIds.length - 4}</span>
-                )}
+              <div className={`text-xl font-bold leading-tight ${
+                today ? 'text-ink dark:text-gray-100' : 'text-ink-light dark:text-gray-300'
+              }`}>
+                {day.getDate()}
               </div>
+            </div>
 
-              {/* Activity summary */}
+            {/* Divider */}
+            <div className="w-px self-stretch bg-border dark:bg-border-dark" />
+
+            {/* Right: habits + activities */}
+            <div className="min-w-0 flex-1">
+              {/* Habits */}
+              {uniqueHabitIds.length > 0 && (
+                <div className="space-y-0.5">
+                  {uniqueHabitIds.map((hid) => {
+                    const habit = habitMap.get(hid)
+                    return (
+                      <div key={hid} className="flex items-center gap-1.5 truncate">
+                        <span className="text-xs text-ink dark:text-gray-400">{habit?.emoji || '·'}</span>
+                        <span className="truncate text-xs text-ink-light dark:text-gray-400">
+                          {habit?.name || 'Habit'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Activities */}
               {activities.length > 0 && (
-                <div className="mt-1 border-t border-border pt-1 dark:border-border-dark">
-                  {activities.slice(0, 2).map((a) => (
-                    <div key={a.stravaId} className="text-[8px] text-muted">
-                      {a.type} · {formatDistance(a.distanceMeters)} · {formatDuration(a.movingTimeSecs)}
+                <div className={uniqueHabitIds.length > 0 ? 'mt-1.5 border-t border-border pt-1.5 dark:border-border-dark' : ''}>
+                  {activities.map((a) => (
+                    <div key={a.stravaId} className="flex items-baseline gap-2 text-xs text-muted">
+                      <span className="font-medium text-ink-light dark:text-gray-400">{a.type}</span>
+                      <span>{formatDistance(a.distanceMeters)}</span>
+                      <span>{formatDuration(a.movingTimeSecs)}</span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Empty dot */}
+              {/* Empty */}
               {uniqueHabitIds.length === 0 && activities.length === 0 && (
-                <div className="flex flex-1 items-center justify-center">
-                  <span className="block h-1 w-1 rounded-full bg-border dark:bg-border-dark" />
-                </div>
+                <p className="py-1 text-xs text-muted">—</p>
               )}
-            </button>
-          )
-        })}
-      </div>
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }
