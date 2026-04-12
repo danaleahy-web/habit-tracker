@@ -19,6 +19,7 @@ const emptyExercise = (): Exercise => ({ name: '', sets: 3, reps: 10, weight: un
 
 export interface WorkoutFormData {
   name: string; emoji: string; type: string; exercises: Exercise[]
+  minExercisesToComplete?: number
   scheduledDays?: number[]; frequencyPerWeek?: number
   startDate?: Date; endDate?: Date
 }
@@ -33,6 +34,8 @@ interface WorkoutFormModalProps {
 export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutFormModalProps) {
   const [name, setName] = useState('')
   const [exercises, setExercises] = useState<Exercise[]>([emptyExercise()])
+  const [completionMode, setCompletionMode] = useState<'all' | 'minimum'>('all')
+  const [minToComplete, setMinToComplete] = useState(1)
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('specific')
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
   const [flexFrequency, setFlexFrequency] = useState(3)
@@ -44,6 +47,14 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
     if (open) {
       setName(workout?.name ?? '')
       setExercises(workout?.exercises?.length ? workout.exercises.map((e) => ({ ...e })) : [emptyExercise()])
+
+      if (workout?.minExercisesToComplete != null) {
+        setCompletionMode('minimum')
+        setMinToComplete(workout.minExercisesToComplete)
+      } else {
+        setCompletionMode('all')
+        setMinToComplete(1)
+      }
 
       if (workout?.scheduledDays && workout.scheduledDays.length > 0) {
         setScheduleMode('specific')
@@ -87,6 +98,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
     if (!canSave) return
     onSave({
       name: name.trim(), emoji: '●', type: 'Workout', exercises: validExercises,
+      minExercisesToComplete: completionMode === 'minimum' ? minToComplete : undefined,
       scheduledDays: scheduleMode === 'specific' ? [...selectedDays].sort() : [],
       frequencyPerWeek: scheduleMode === 'specific' ? selectedDays.size : flexFrequency,
       startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
@@ -152,6 +164,35 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
               className="mt-2 w-full rounded-lg border border-dashed border-border py-2.5 text-sm font-medium text-muted hover:border-accent hover:text-accent dark:border-border-dark">
               + Add Exercise
             </button>
+          </div>
+
+          {/* Completion threshold */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Completion</label>
+            <div className="mb-3 flex rounded-md border border-border p-0.5 dark:border-border-dark">
+              <button type="button" onClick={() => setCompletionMode('all')}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${completionMode === 'all' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'}`}>
+                All exercises
+              </button>
+              <button type="button" onClick={() => { setCompletionMode('minimum'); setMinToComplete(Math.max(1, Math.min(minToComplete, validExercises.length || 1))) }}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${completionMode === 'minimum' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'}`}>
+                Minimum
+              </button>
+            </div>
+            {completionMode === 'minimum' && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-ink-light dark:text-gray-400">Complete at least</span>
+                <input type="number" min={1} max={Math.max(1, validExercises.length)}
+                  value={minToComplete} onChange={(e) => setMinToComplete(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-16 rounded-md border border-border bg-paper px-2 py-1.5 text-center text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+                <span className="text-sm text-ink-light dark:text-gray-400">of {validExercises.length || '—'}</span>
+              </div>
+            )}
+            <p className="mt-1.5 text-xs text-muted">
+              {completionMode === 'all'
+                ? 'Workout is done when every exercise is crossed off'
+                : `Workout is done after ${minToComplete} exercise${minToComplete !== 1 ? 's are' : ' is'} crossed off`}
+            </p>
           </div>
 
           {/* Schedule */}

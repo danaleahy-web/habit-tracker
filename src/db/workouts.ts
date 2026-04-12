@@ -17,7 +17,7 @@ export async function createWorkout(
 
 export async function updateWorkout(
   id: number,
-  changes: Partial<Pick<Workout, 'name' | 'emoji' | 'type' | 'exercises' | 'scheduledDays' | 'frequencyPerWeek' | 'startDate' | 'endDate'>>
+  changes: Partial<Pick<Workout, 'name' | 'emoji' | 'type' | 'exercises' | 'minExercisesToComplete' | 'scheduledDays' | 'frequencyPerWeek' | 'startDate' | 'endDate'>>
 ): Promise<void> {
   await db.workouts.update(id, changes)
 }

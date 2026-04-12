@@ -127,7 +127,8 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     if (totalEx === 0) return false
     const doneCount = w.exercises.filter((_, i) => completed.has(i)).length +
       extras.exercises.filter((_, i) => getExtrasCompleted(w.id!, extras.completed).has(i)).length
-    return doneCount === totalEx
+    const requiredCount = w.minExercisesToComplete ?? totalEx
+    return doneCount >= requiredCount
   }).length
   const totalItems = scheduledHabits.length + scheduledWorkouts.length
   const totalCompleted = completedHabitCount + completedWorkoutCount
@@ -201,7 +202,8 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 const extrasCompleted = getExtrasCompleted(wid, extras.completed)
                 const doneCount = workout.exercises.filter((_, i) => completedExercises.has(i)).length +
                   extras.exercises.filter((_, i) => extrasCompleted.has(i)).length
-                const allDone = totalEx > 0 && doneCount === totalEx
+                const requiredCount = workout.minExercisesToComplete ?? totalEx
+                const allDone = totalEx > 0 && doneCount >= requiredCount
 
                 return (
                   <li key={wid} className="border-t border-border dark:border-border-dark">

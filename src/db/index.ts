@@ -45,6 +45,8 @@ export interface Workout {
   emoji: string
   type: string            // "Strength", "Cardio", "Flexibility", etc.
   exercises: Exercise[]
+  /** Min exercises to complete for the workout to count as done. Undefined = all. */
+  minExercisesToComplete?: number
   /** Specific days: 0=Sun..6=Sat. Empty = flexible / every day. */
   scheduledDays?: number[]
   /** Times per week when using flexible scheduling */
