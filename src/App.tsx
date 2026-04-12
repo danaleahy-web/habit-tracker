@@ -27,7 +27,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/habit-tracker">
       <div className="flex h-dvh flex-col bg-background dark:bg-background-dark">
-        <main className="flex-1 overflow-y-auto pb-16">
+        <main className="flex-1 overflow-y-auto pb-12">
           <Routes>
             <Route path="/" element={<CalendarPage />} />
             <Route path="/plan" element={<HabitsPage />} />

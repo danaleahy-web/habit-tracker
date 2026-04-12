@@ -62,25 +62,25 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const completedCount = data.habits.filter((h) => h.id != null && isCompleted(h.id!)).length
 
   return (
-    <div className="space-y-4 px-3">
+    <div className="space-y-3 px-3">
       {/* Date heading */}
-      <div className="border-b border-border px-1 pb-3 dark:border-border-dark">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">
+      <div className="border-b border-border px-1 pb-2 dark:border-border-dark">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
           {today ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'long' })}
         </p>
-        <h2 className="mt-0.5 text-xl font-bold text-ink dark:text-gray-100">
+        <h2 className="mt-0.5 text-lg font-bold text-ink dark:text-gray-100">
           {formatDayFull(date)}
         </h2>
       </div>
 
       {/* Habits checklist */}
       <div>
-        <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
+        <h3 className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted">
           Habits
         </h3>
 
         {data.habits.length === 0 ? (
-          <div className="px-1 py-8 text-center">
+          <div className="px-1 py-5 text-center">
             <p className="text-sm text-muted">No habits created yet.</p>
             <p className="mt-1 text-xs text-muted">Head to the Plan tab to add some.</p>
           </div>
@@ -140,12 +140,12 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
       {/* Activities */}
       <div>
-        <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
+        <h3 className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted">
           Activities
         </h3>
 
         {activities.length === 0 ? (
-          <div className="px-1 py-8 text-center">
+          <div className="px-1 py-5 text-center">
             <p className="text-sm text-muted">No activities on this day.</p>
           </div>
         ) : (

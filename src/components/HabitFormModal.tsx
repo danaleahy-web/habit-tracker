@@ -51,14 +51,14 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      <div className="relative w-full max-w-md rounded-t-2xl bg-paper px-6 pb-8 pt-4 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
-        <div className="mx-auto mb-5 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
+      <div className="relative w-full max-w-md rounded-t-2xl bg-paper px-5 pb-6 pt-3 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
+        <div className="mx-auto mb-4 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
 
-        <h2 className="mb-6 text-xl font-bold text-ink dark:text-gray-100">
+        <h2 className="mb-4 text-lg font-bold text-ink dark:text-gray-100">
           {isEditing ? 'Edit Habit' : 'New Habit'}
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Name */}
           <div>
             <label htmlFor="habitName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">

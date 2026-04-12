@@ -79,7 +79,7 @@ export function HabitsPage() {
   }
 
   return (
-    <div className="px-4 pb-6 pt-6">
+    <div className="px-4 pb-4 pt-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink dark:text-gray-100">Plan</h1>
@@ -91,16 +91,16 @@ export function HabitsPage() {
 
       {/* Empty state */}
       {isEmpty && (
-        <div className="mt-16 text-center">
+        <div className="mt-10 text-center">
           <div className="mx-auto h-px w-16 bg-border dark:bg-border-dark" />
-          <p className="mt-6 text-sm text-ink-light dark:text-gray-400">Nothing planned yet</p>
+          <p className="mt-4 text-sm text-ink-light dark:text-gray-400">Nothing planned yet</p>
           <p className="mt-1 text-xs text-muted">Tap "+ New" to add a habit or workout.</p>
         </div>
       )}
 
       {/* Habits */}
       {activeHabits.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Habits</h2>
           <ul className="space-y-1.5">
             {activeHabits.map((h) => (
@@ -116,7 +116,7 @@ export function HabitsPage() {
 
       {/* Workouts */}
       {activeWorkouts.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-4">
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Workouts</h2>
           <ul className="space-y-1.5">
             {activeWorkouts.map((w) => (

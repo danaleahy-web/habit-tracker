@@ -16,8 +16,8 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
   }
 
   return (
-    <div className="px-3">
-      <div className="rounded-xl border border-border bg-paper p-3 dark:border-border-dark dark:bg-paper-dark">
+    <div className="px-2">
+      <div className="rounded-xl border border-border bg-paper p-2.5 dark:border-border-dark dark:bg-paper-dark">
         {/* Day-of-week headers */}
         <div className="mb-1 grid grid-cols-7 gap-0.5">
           {DAY_NAMES_SHORT.map((name) => (
@@ -47,7 +47,7 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
       </div>
 
       {/* Legend */}
-      <div className="mt-3 flex items-center justify-center gap-5 text-[10px] text-muted">
+      <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-muted">
         <span className="flex items-center gap-1.5">
           <span className="block h-1.5 w-1.5 rounded-full bg-ink dark:bg-gray-400" />
           Habit

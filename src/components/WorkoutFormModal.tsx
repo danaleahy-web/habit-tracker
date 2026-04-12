@@ -68,17 +68,17 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      <div className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-paper px-6 pb-8 pt-4 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
-        <div className="mx-auto mb-5 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
+      <div className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-paper px-5 pb-6 pt-3 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
+        <div className="mx-auto mb-4 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
 
-        <h2 className="mb-1 text-xl font-bold text-ink dark:text-gray-100">
+        <h2 className="mb-1 text-lg font-bold text-ink dark:text-gray-100">
           {isEditing ? 'Edit Workout' : 'New Workout'}
         </h2>
-        <p className="mb-6 text-sm text-muted">
+        <p className="mb-4 text-sm text-muted">
           Build a routine with multiple exercises
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
             <label htmlFor="workoutName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">

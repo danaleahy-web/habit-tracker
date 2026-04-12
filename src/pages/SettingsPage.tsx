@@ -92,12 +92,12 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="px-4 pb-6 pt-6">
-      <h1 className="text-2xl font-bold text-ink dark:text-gray-100">Settings</h1>
-      <p className="mt-1 text-sm text-muted">Manage your data and connections.</p>
+    <div className="px-4 pb-4 pt-4">
+      <h1 className="text-xl font-bold text-ink dark:text-gray-100">Settings</h1>
+      <p className="mt-0.5 text-sm text-muted">Manage your data and connections.</p>
 
       {/* ===== Strava Section ===== */}
-      <div className="mt-6">
+      <div className="mt-5">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Strava</h2>
 
         {/* Error */}
@@ -171,7 +171,7 @@ export function SettingsPage() {
       </div>
 
       {/* ===== Data Section ===== */}
-      <div className="mt-8">
+      <div className="mt-5">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Data</h2>
         <div className="space-y-1">
           <SettingsButton label="Export to JSON" desc="Download a backup of all your data" />
@@ -180,7 +180,7 @@ export function SettingsPage() {
       </div>
 
       {/* ===== Danger Zone ===== */}
-      <div className="mt-8">
+      <div className="mt-5">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Danger Zone</h2>
         <SettingsButton label="Reset Strava Credentials" desc="Remove saved API keys and re-enter them" danger />
       </div>

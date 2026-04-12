@@ -56,12 +56,12 @@ export function CalendarPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-10 bg-background px-4 pb-2 pt-4 dark:bg-background-dark">
+      <div className="sticky top-0 z-10 bg-background px-3 pb-1.5 pt-3 dark:bg-background-dark">
         {/* View toggle */}
-        <div className="mx-auto flex max-w-md rounded-md border border-border p-0.5 dark:border-border-dark">
+        <div className="mx-auto flex rounded-md border border-border p-0.5 dark:border-border-dark">
           {VIEW_MODES.map((mode) => (
             <button key={mode} onClick={() => setViewMode(mode)}
-              className={`flex-1 rounded-[5px] py-2 text-[11px] font-semibold uppercase tracking-wider transition-all ${
+              className={`flex-1 rounded-[4px] py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all ${
                 viewMode === mode
                   ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
                   : 'text-muted hover:text-ink dark:hover:text-gray-300'
@@ -72,16 +72,16 @@ export function CalendarPage() {
         </div>
 
         {/* Navigation */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between">
           <button onClick={goBack} aria-label="Previous"
-            className="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-background dark:hover:bg-background-dark">
+            className="flex h-7 w-7 items-center justify-center rounded text-muted">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-lg font-bold text-ink dark:text-gray-100">{heading}</h1>
+          <h1 className="text-base font-bold text-ink dark:text-gray-100">{heading}</h1>
           <button onClick={goForward} aria-label="Next"
-            className="flex h-8 w-8 items-center justify-center rounded text-muted transition-colors hover:bg-background dark:hover:bg-background-dark">
+            className="flex h-7 w-7 items-center justify-center rounded text-muted">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
@@ -90,10 +90,10 @@ export function CalendarPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="flex-1 overflow-y-auto pb-2">
         {/* Floating Today button */}
         <button onClick={goToday}
-          className="fixed bottom-16 right-4 z-50 rounded-md border border-border bg-paper px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-ink shadow-sm transition-all hover:bg-background active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
+          className="fixed bottom-14 right-3 z-50 rounded-md border border-border bg-paper px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink shadow-sm transition-all active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
           Today
         </button>
 

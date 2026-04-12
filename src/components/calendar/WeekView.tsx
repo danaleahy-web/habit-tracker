@@ -26,8 +26,8 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
   }
 
   return (
-    <div className="px-2">
-      <div className="grid grid-cols-7 gap-1.5">
+    <div className="px-1.5">
+      <div className="grid grid-cols-7 gap-1">
         {days.map((day) => {
           const key = toDateKey(day)
           const today = isToday(day)
@@ -39,7 +39,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
             <button
               key={key}
               onClick={() => onSelectDay(day)}
-              className={`flex min-h-[140px] flex-col rounded-lg border p-2 text-left transition-colors ${
+              className={`flex min-h-[110px] flex-col rounded-lg border p-1.5 text-left transition-colors ${
                 today
                   ? 'border-ink/30 bg-ink/[0.03] dark:border-gray-500 dark:bg-gray-100/5'
                   : 'border-border bg-paper hover:bg-background dark:border-border-dark dark:bg-paper-dark dark:hover:bg-background-dark'

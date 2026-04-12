@@ -71,7 +71,7 @@ export function YearView({ date, data, onSelectDay }: YearViewProps) {
   const hasActivities = sortedActivityTypes.length > 0
 
   return (
-    <div className="space-y-2 px-3">
+    <div className="space-y-1.5 px-2">
       {/* Habits */}
       {data.habits.length > 0 && (
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">Habits</p>
@@ -133,7 +133,7 @@ function HeatmapRow({ label, hex, bg, daySet, months, year, expanded, onToggle, 
   return (
     <div className="rounded-lg border border-border bg-paper dark:border-border-dark dark:bg-paper-dark">
       {/* Header */}
-      <button onClick={onToggle} className="flex w-full items-center justify-between px-3 py-2.5 text-left">
+      <button onClick={onToggle} className="flex w-full items-center justify-between px-3 py-2 text-left">
         <div className="flex items-center gap-2">
           <span className="block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: hex }} />
           <span className="text-sm font-medium text-ink dark:text-gray-200">{label}</span>
@@ -148,7 +148,7 @@ function HeatmapRow({ label, hex, bg, daySet, months, year, expanded, onToggle, 
       </button>
 
       {/* Heatmap grid — 12 month columns */}
-      <div className="px-3 pb-2.5">
+      <div className="px-2 pb-2">
         <div className="grid grid-cols-12 gap-1">
           {months.map((monthDays, mi) => {
             const firstDow = monthDays[0].getDay()

@@ -38,14 +38,14 @@ export function SetupPage({ onComplete }: Props) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-6 dark:bg-background-dark">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-ink dark:text-gray-100">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-ink dark:text-gray-100">
             HabitSync
           </h1>
-          <div className="mx-auto mt-2 h-px w-16 bg-accent" />
+          <div className="mx-auto mt-2 h-px w-12 bg-accent" />
         </div>
 
-        <p className="mb-8 text-center text-sm leading-relaxed text-ink-light dark:text-gray-400">
+        <p className="mb-6 text-center text-sm leading-relaxed text-ink-light dark:text-gray-400">
           Connect your Strava account to get started.
           <br />
           Find your API credentials at{' '}
@@ -112,7 +112,7 @@ export function SetupPage({ onComplete }: Props) {
           </button>
         </form>
 
-        <p className="mt-8 text-center text-[11px] leading-relaxed text-muted">
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-muted">
           Your credentials are stored locally on this device only.
           <br />
           They are never sent to any third-party server.
