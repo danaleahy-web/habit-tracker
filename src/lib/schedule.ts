@@ -9,13 +9,14 @@ interface Schedulable {
 }
 
 /**
- * Check if a schedulable item (habit or workout) should appear on a given date.
+ * Check if a schedulable item should appear on a given date.
  *
  * Rules:
  * 1. Date must be ≥ startDate (or createdAt if no startDate)
  * 2. Date must be ≤ endDate (if set)
  * 3. If scheduledDays has entries → date's day-of-week must be in the array
- * 4. If no scheduledDays (flexible) → always show (user picks which days)
+ * 4. If frequencyPerWeek < 7 and no scheduledDays → flexible mode, don't auto-show
+ * 5. If frequencyPerWeek === 7 or no scheduling at all → show every day
  */
 export function isScheduledForDate(item: Schedulable, date: Date): boolean {
   const dateKey = toDateKey(date)
@@ -31,13 +32,18 @@ export function isScheduledForDate(item: Schedulable, date: Date): boolean {
     return false
   }
 
-  // Check day-of-week
+  // Specific days selected → only show on those days
   if (item.scheduledDays && item.scheduledDays.length > 0) {
-    const dayOfWeek = date.getDay() // 0=Sun, 6=Sat
+    const dayOfWeek = date.getDay()
     return item.scheduledDays.includes(dayOfWeek)
   }
 
-  // Flexible or no scheduling → show every day
+  // Flexible with less than daily → don't auto-show (user logs it when they do it)
+  if (item.frequencyPerWeek != null && item.frequencyPerWeek < 7) {
+    return false
+  }
+
+  // Daily or no scheduling → show every day
   return true
 }
 
