@@ -40,16 +40,30 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     return pendingHabitToggles.has(habitId) ? !dbState : dbState
   }
 
-  // Individual exercise toggle
-  const handleExerciseToggle = async (workoutId: number, exerciseIndex: number, totalExercises: number) => {
-    await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
-    onDataChange?.()
-  }
+  // Local optimistic state for exercise toggles (avoids re-render that collapses the workout)
+  const [localExOverrides, setLocalExOverrides] = useState<Map<string, Set<number>>>(new Map())
 
-  // Get completed exercises for a workout from the log
+  // Get completed exercises: merge DB state with local optimistic overrides
   const getCompletedExercises = (workoutId: number): Set<number> => {
+    const overrideKey = `${workoutId}`
+    const override = localExOverrides.get(overrideKey)
+    if (override) return override
     const log = workoutLogs.find((l) => l.workoutId === workoutId)
     return new Set(log?.completedExercises || [])
+  }
+
+  // Individual exercise toggle — optimistic local update, DB write in background
+  const handleExerciseToggle = async (workoutId: number, exerciseIndex: number, totalExercises: number) => {
+    const key = `${workoutId}`
+    const current = getCompletedExercises(workoutId)
+    const next = new Set(current)
+    next.has(exerciseIndex) ? next.delete(exerciseIndex) : next.add(exerciseIndex)
+
+    // Optimistic update
+    setLocalExOverrides((prev) => new Map(prev).set(key, next))
+
+    // Persist to DB
+    await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
   }
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
