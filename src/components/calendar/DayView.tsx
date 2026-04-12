@@ -75,9 +75,22 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     onDataChange?.()
   }
 
+  // Optimistic local state for extra exercise toggles
+  const [localExtraOverrides, setLocalExtraOverrides] = useState<Map<string, Set<number>>>(new Map())
+
+  const getExtrasCompleted = (workoutId: number, dbCompleted: Set<number>): Set<number> => {
+    const override = localExtraOverrides.get(`${workoutId}`)
+    return override ?? dbCompleted
+  }
+
   const handleToggleExtra = async (workoutId: number, extraIndex: number) => {
+    const key = `${workoutId}`
+    const extras = getExtras(workoutId)
+    const current = getExtrasCompleted(workoutId, extras.completed)
+    const next = new Set(current)
+    next.has(extraIndex) ? next.delete(extraIndex) : next.add(extraIndex)
+    setLocalExtraOverrides((prev) => new Map(prev).set(key, next))
     await toggleExtraExercise(workoutId, date, extraIndex)
-    onDataChange?.()
   }
 
   const handleRemoveExtra = async (workoutId: number, extraIndex: number) => {
@@ -107,7 +120,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     const totalEx = w.exercises.length + extras.exercises.length
     if (totalEx === 0) return false
     const doneCount = w.exercises.filter((_, i) => completed.has(i)).length +
-      extras.exercises.filter((_, i) => extras.completed.has(i)).length
+      extras.exercises.filter((_, i) => getExtrasCompleted(w.id!, extras.completed).has(i)).length
     return doneCount === totalEx
   }).length
   const totalItems = scheduledHabits.length + scheduledWorkouts.length
@@ -179,8 +192,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 const completedExercises = getCompletedExercises(wid)
                 const extras = getExtras(wid)
                 const totalEx = workout.exercises.length + extras.exercises.length
+                const extrasCompleted = getExtrasCompleted(wid, extras.completed)
                 const doneCount = workout.exercises.filter((_, i) => completedExercises.has(i)).length +
-                  extras.exercises.filter((_, i) => extras.completed.has(i)).length
+                  extras.exercises.filter((_, i) => extrasCompleted.has(i)).length
                 const allDone = totalEx > 0 && doneCount === totalEx
 
                 return (
@@ -223,7 +237,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                               {extras.exercises.map((ex, i) => (
                                 <ExerciseRow key={`e-${i}`} name={ex.name}
                                   detail={`${ex.sets}×${ex.reps}${ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}`}
-                                  done={extras.completed.has(i)}
+                                  done={extrasCompleted.has(i)}
                                   onToggle={() => handleToggleExtra(wid, i)}
                                   onRemove={() => handleRemoveExtra(wid, i)} />
                               ))}
