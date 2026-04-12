@@ -9,7 +9,7 @@ const STRAVA_API_URL = 'https://www.strava.com/api/v3'
 
 // The redirect URI must match what's configured in your Strava app settings
 function getRedirectUri(): string {
-  return `${window.location.origin}/habit-tracker/sync`
+  return `${window.location.origin}/habit-tracker/settings`
 }
 
 // ---------- OAuth ----------

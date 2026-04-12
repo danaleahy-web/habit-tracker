@@ -4,7 +4,6 @@ import { BottomNav } from './components/BottomNav'
 import { SetupPage } from './pages/SetupPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { HabitsPage } from './pages/HabitsPage'
-import { SyncPage } from './pages/SyncPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
@@ -32,7 +31,6 @@ export default function App() {
           <Routes>
             <Route path="/" element={<CalendarPage />} />
             <Route path="/plan" element={<HabitsPage />} />
-            <Route path="/sync" element={<SyncPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
