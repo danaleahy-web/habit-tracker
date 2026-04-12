@@ -138,8 +138,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 const toggling = pendingWorkoutToggles.has(wid)
                 const isExpanded = expandedWorkout === wid
                 const completedExercises = getCompletedExercises(wid)
-                const allExDone = workout.exercises.length > 0 &&
-                  workout.exercises.every((_, i) => done || completedExercises.has(i))
                 const exDoneCount = done
                   ? workout.exercises.length
                   : workout.exercises.filter((_, i) => completedExercises.has(i)).length
@@ -153,12 +151,12 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                         onClick={() => handleWorkoutToggle(wid, workout.exercises.length)}
                         disabled={toggling}
                         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
-                          done || allExDone
+                          done
                             ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
                             : 'border-border hover:border-ink-light dark:border-border-dark dark:hover:border-gray-500'
                         } ${toggling ? 'opacity-50' : 'active:scale-90'}`}
                       >
-                        {(done || allExDone) && (
+                        {done && (
                           <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -170,7 +168,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                         className="flex flex-1 items-center gap-2 text-left"
                       >
                         <span className={`flex-1 text-sm transition-colors ${
-                          done || allExDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
+                          done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
                         }`}>
                           {workout.name}
                         </span>
