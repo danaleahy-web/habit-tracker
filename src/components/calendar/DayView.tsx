@@ -4,30 +4,12 @@ import { toggleCompletion } from '../../db/habits'
 import { toggleWorkoutLog } from '../../db/workouts'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
 import { isScheduledForDate } from '../../lib/schedule'
+import { ActivityCard } from '../ActivityCard'
 
 interface DayViewProps {
   date: Date
   data: CalendarData
   onDataChange?: () => void
-}
-
-function formatDistance(meters: number): string {
-  const km = meters / 1000
-  return km >= 1 ? `${km.toFixed(1)} km` : `${Math.round(meters)} m`
-}
-
-function formatDuration(secs: number): string {
-  const h = Math.floor(secs / 3600)
-  const m = Math.floor((secs % 3600) / 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
-function formatPace(meters: number, secs: number): string {
-  if (meters === 0) return '—'
-  const paceSecsPerKm = secs / (meters / 1000)
-  const m = Math.floor(paceSecsPerKm / 60)
-  const s = Math.round(paceSecsPerKm % 60)
-  return `${m}:${String(s).padStart(2, '0')} /km`
 }
 
 export function DayView({ date, data, onDataChange }: DayViewProps) {
@@ -240,23 +222,11 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
               <p className="text-sm text-muted">No activities on this day.</p>
             </div>
           ) : (
-            <ul>
+            <div>
               {activities.map((activity) => (
-                <li key={activity.stravaId} className="border-t border-border px-4 py-3 dark:border-border-dark">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-ink dark:text-gray-100">{activity.name}</span>
-                    <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted dark:border-border-dark">
-                      {activity.type}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex gap-4 text-xs text-muted">
-                    <span>{formatDistance(activity.distanceMeters)}</span>
-                    <span>{formatDuration(activity.movingTimeSecs)}</span>
-                    <span>{formatPace(activity.distanceMeters, activity.movingTimeSecs)}</span>
-                  </div>
-                </li>
+                <ActivityCard key={activity.stravaId} activity={activity} />
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
