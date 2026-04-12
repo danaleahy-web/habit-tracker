@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* Bullet journal palette — warm paper tones, ink blacks */
+  --color-primary: #2d2a26;
+  --color-primary-dark: #1a1815;
+  --color-accent: #8b7355;
+  --color-accent-light: #c4a882;
+  --color-surface: #faf8f5;
+  --color-surface-dark: #1c1b19;
+  --color-background: #f3f0eb;
+  --color-background-dark: #141311;
+  --color-border: #e5e0d8;
+  --color-border-dark: #2e2c28;
+  --color-muted: #a09888;
+  --color-ink: #2d2a26;
+  --color-ink-light: #6b6358;
+  --color-paper: #fdfcfa;
+  --color-paper-dark: #201f1c;
+  --color-ring: #8b7355;
+  --color-ring-bg: #e8dfd3;
+}
+
+/* Ensure full-height on mobile browsers */
+html, body, #root {
+  height: 100%;
+  height: 100dvh;
+}
+
+body {
+  margin: 0;
+  font-family: 'Georgia', 'Cambria', 'Times New Roman', serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Override sans-serif for UI elements */
+button, input, select, textarea, nav, label {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Georgia', 'Cambria', 'Times New Roman', serif;
+  letter-spacing: -0.01em;
+}
