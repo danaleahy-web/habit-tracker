@@ -15,7 +15,8 @@ const FLEX_FREQ = [
 
 type ScheduleMode = 'specific' | 'flexible'
 
-const emptyExercise = (): Exercise => ({ name: '', sets: 3, reps: 10, weight: undefined, unit: 'kg', notes: '' })
+const emptyExercise = (): Exercise => ({ name: '', sets: 3, reps: 10, mode: 'reps', weight: undefined, unit: 'kg', notes: '' })
+
 
 export interface WorkoutFormData {
   name: string; emoji: string; type: string; exercises: Exercise[]
@@ -137,15 +138,35 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
                         className="text-xs text-muted hover:text-red-500">×</button>
                     )}
                   </div>
-                  <div className="mt-2 grid grid-cols-3 gap-2">
+                  {/* Reps / Time toggle */}
+                  <div className="mt-2 mb-2 flex rounded-md border border-border p-0.5 dark:border-border-dark">
+                    <button type="button" onClick={() => updateExercise(i, 'mode', 'reps')}
+                      className={`flex-1 rounded-[3px] py-1 text-[10px] font-medium transition-all ${
+                        (ex.mode || 'reps') === 'reps' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'
+                      }`}>Reps</button>
+                    <button type="button" onClick={() => updateExercise(i, 'mode', 'time')}
+                      className={`flex-1 rounded-[3px] py-1 text-[10px] font-medium transition-all ${
+                        ex.mode === 'time' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'
+                      }`}>Time</button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Sets</label>
                       <input type="number" min={1} value={ex.sets} onChange={(e) => updateExercise(i, 'sets', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
                     </div>
-                    <div>
-                      <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Reps</label>
-                      <input type="number" min={1} value={ex.reps} onChange={(e) => updateExercise(i, 'reps', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
-                    </div>
+                    {(ex.mode || 'reps') === 'reps' ? (
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Reps</label>
+                        <input type="number" min={1} value={ex.reps} onChange={(e) => updateExercise(i, 'reps', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Seconds</label>
+                        <input type="number" min={1} value={ex.duration ?? 30}
+                          onChange={(e) => updateExercise(i, 'duration', parseInt(e.target.value) || 1)}
+                          className={inputCls + ' text-center'} />
+                      </div>
+                    )}
                     <div>
                       <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Weight</label>
                       <div className="flex">

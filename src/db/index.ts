@@ -33,7 +33,12 @@ export interface HabitCompletion {
 export interface Exercise {
   name: string
   sets: number
+  /** Reps count (used when mode is 'reps' or undefined) */
   reps: number
+  /** Duration in seconds (used when mode is 'time') */
+  duration?: number
+  /** 'reps' (default) or 'time' */
+  mode?: 'reps' | 'time'
   weight?: number
   unit?: 'kg' | 'lbs'
   notes?: string

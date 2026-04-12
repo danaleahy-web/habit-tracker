@@ -5,6 +5,7 @@ import { getAllWorkouts, createWorkout, updateWorkout, archiveWorkout, unarchive
 import { HabitFormModal, type HabitFormData } from '../components/HabitFormModal'
 import { WorkoutFormModal, type WorkoutFormData } from '../components/WorkoutFormModal'
 import { formatSchedule } from '../lib/schedule'
+import { formatExerciseDetail } from '../lib/exercise'
 
 type CreateType = 'habit' | 'workout'
 
@@ -279,7 +280,7 @@ function WorkoutCard({ workout, onEdit, onArchive, onDelete }: {
                 <li key={i} className="flex items-baseline gap-2 text-sm">
                   <span className="text-xs text-muted">{i + 1}.</span>
                   <span className="flex-1 text-ink-light dark:text-gray-300">{ex.name}</span>
-                  <span className="text-xs text-muted">{ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}</span>
+                  <span className="text-xs text-muted">{formatExerciseDetail(ex)}</span>
                 </li>
               ))}
             </ul>

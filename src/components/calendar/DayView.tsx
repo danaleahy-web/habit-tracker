@@ -3,6 +3,7 @@ import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
 import type { Exercise } from '../../db/index'
+import { formatExerciseDetail } from '../../lib/exercise'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
 import { isScheduledForDate } from '../../lib/schedule'
 import { ActivityCard } from '../ActivityCard'
@@ -229,7 +230,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                             const exDone = completedExercises.has(i)
                             return (
                               <ExerciseRow key={`t-${i}`} name={ex.name}
-                                detail={`${ex.sets}×${ex.reps}${ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}`}
+                                detail={formatExerciseDetail(ex)}
                                 done={exDone}
                                 onToggle={() => handleExerciseToggle(wid, i, workout.exercises.length)} />
                             )
@@ -243,7 +244,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                             <ul>
                               {extras.exercises.map((ex, i) => (
                                 <ExerciseRow key={`e-${i}`} name={ex.name}
-                                  detail={`${ex.sets}×${ex.reps}${ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}`}
+                                  detail={formatExerciseDetail(ex)}
                                   done={extrasCompleted.has(i)}
                                   onToggle={() => handleToggleExtra(wid, i)}
                                   onRemove={() => handleRemoveExtra(wid, i)} />
