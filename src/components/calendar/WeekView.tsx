@@ -37,7 +37,18 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
         const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, day))
         const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, day))
         const completedHabitIds = new Set(completions.map((c) => c.habitId))
-        const loggedWorkoutIds = new Set(workoutLogs.map((l) => l.workoutId))
+
+        // Check if a workout is "done" based on exercise completion threshold
+        const isWorkoutDone = (w: typeof data.workouts[0]) => {
+          const log = workoutLogs.find((l) => l.workoutId === w.id)
+          if (!log) return false
+          const templateDone = (log.completedExercises || []).length
+          const extrasDone = (log.completedExtras || []).length
+          const totalDone = templateDone + extrasDone
+          const totalEx = w.exercises.length + (log.extraExercises || []).length
+          const required = w.minExercisesToComplete ?? totalEx
+          return totalEx > 0 && totalDone >= required
+        }
         const isLast = i === days.length - 1
 
         return (
@@ -90,7 +101,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
               {scheduledWorkouts.length > 0 && (
                 <div className={scheduledHabits.length > 0 ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
                   {scheduledWorkouts.map((w) => {
-                    const done = w.id != null && loggedWorkoutIds.has(w.id)
+                    const done = w.id != null && isWorkoutDone(w)
                     return (
                       <div key={w.id} className="truncate">
                         <span className={`truncate text-xs ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
