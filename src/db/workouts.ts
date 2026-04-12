@@ -39,26 +39,59 @@ export async function deleteWorkout(id: number): Promise<void> {
 
 // ---- Workout Logs ----
 
-/** Toggle a workout log for a given date. Returns true if now logged. */
-export async function toggleWorkoutLog(workoutId: number, date: Date): Promise<boolean> {
+/** Get the workout log for a specific workout on a specific date */
+async function getLogForDate(workoutId: number, date: Date) {
   const dayKey = toDateKey(date)
-  const dayStart = new Date(dayKey)
-  const dayEnd = new Date(dayKey + 'T23:59:59')
-
-  const existing = await db.workoutLogs
+  return db.workoutLogs
     .where('completedAt')
-    .between(dayStart, dayEnd, true, true)
+    .between(new Date(dayKey), new Date(dayKey + 'T23:59:59'), true, true)
     .and((l) => l.workoutId === workoutId)
     .first()
+}
+
+/** Toggle the entire workout for a date. When completing, marks all exercises done. */
+export async function toggleWorkoutLog(workoutId: number, date: Date, exerciseCount: number): Promise<boolean> {
+  const existing = await getLogForDate(workoutId, date)
 
   if (existing) {
     await db.workoutLogs.delete(existing.id!)
     return false
   } else {
+    const allExercises = Array.from({ length: exerciseCount }, (_, i) => i)
     await db.workoutLogs.add({
       workoutId,
-      completedAt: new Date(dayKey + 'T12:00:00'),
+      completedAt: new Date(toDateKey(date) + 'T12:00:00'),
+      completedExercises: allExercises,
     })
     return true
+  }
+}
+
+/** Toggle a single exercise within a workout log for a date. Creates the log if needed. */
+export async function toggleExerciseInLog(
+  workoutId: number,
+  date: Date,
+  exerciseIndex: number,
+  _totalExercises: number
+): Promise<void> {
+  const existing = await getLogForDate(workoutId, date)
+
+  if (existing) {
+    const completed = new Set(existing.completedExercises || [])
+    if (completed.has(exerciseIndex)) {
+      completed.delete(exerciseIndex)
+    } else {
+      completed.add(exerciseIndex)
+    }
+    await db.workoutLogs.update(existing.id!, {
+      completedExercises: [...completed],
+    })
+  } else {
+    // Create a new log with just this exercise checked
+    await db.workoutLogs.add({
+      workoutId,
+      completedAt: new Date(toDateKey(date) + 'T12:00:00'),
+      completedExercises: [exerciseIndex],
+    })
   }
 }

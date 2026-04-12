@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
-import { toggleWorkoutLog } from '../../db/workouts'
+import { toggleWorkoutLog, toggleExerciseInLog } from '../../db/workouts'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
 import { isScheduledForDate } from '../../lib/schedule'
 import { ActivityCard } from '../ActivityCard'
@@ -42,17 +42,29 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     return pendingHabitToggles.has(habitId) ? !dbState : dbState
   }
 
-  // Workout toggle
-  const handleWorkoutToggle = async (workoutId: number) => {
+  // Workout toggle — marks all exercises done
+  const handleWorkoutToggle = async (workoutId: number, exerciseCount: number) => {
     if (pendingWorkoutToggles.has(workoutId)) return
     setPendingWorkoutToggles((prev) => new Set(prev).add(workoutId))
-    try { await toggleWorkoutLog(workoutId, date); onDataChange?.() }
+    try { await toggleWorkoutLog(workoutId, date, exerciseCount); onDataChange?.() }
     finally { setPendingWorkoutToggles((prev) => { const n = new Set(prev); n.delete(workoutId); return n }) }
+  }
+
+  // Individual exercise toggle
+  const handleExerciseToggle = async (workoutId: number, exerciseIndex: number, totalExercises: number) => {
+    await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
+    onDataChange?.()
   }
 
   const isWorkoutDone = (workoutId: number) => {
     const dbState = loggedWorkoutIds.has(workoutId)
     return pendingWorkoutToggles.has(workoutId) ? !dbState : dbState
+  }
+
+  // Get completed exercises for a workout from the log
+  const getCompletedExercises = (workoutId: number): Set<number> => {
+    const log = workoutLogs.find((l) => l.workoutId === workoutId)
+    return new Set(log?.completedExercises || [])
   }
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
@@ -121,41 +133,49 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
             </h3>
             <ul>
               {scheduledWorkouts.map((workout) => {
-                const done = workout.id != null && isWorkoutDone(workout.id)
-                const toggling = workout.id != null && pendingWorkoutToggles.has(workout.id)
-                const isExpanded = expandedWorkout === workout.id
+                const wid = workout.id!
+                const done = isWorkoutDone(wid)
+                const toggling = pendingWorkoutToggles.has(wid)
+                const isExpanded = expandedWorkout === wid
+                const completedExercises = getCompletedExercises(wid)
+                const allExDone = workout.exercises.length > 0 &&
+                  workout.exercises.every((_, i) => done || completedExercises.has(i))
+                const exDoneCount = done
+                  ? workout.exercises.length
+                  : workout.exercises.filter((_, i) => completedExercises.has(i)).length
+
                 return (
-                  <li key={workout.id} className="border-t border-border dark:border-border-dark">
+                  <li key={wid} className="border-t border-border dark:border-border-dark">
+                    {/* Workout header row */}
                     <div className="flex items-center gap-3 px-4 py-3">
-                      {/* Checkbox */}
+                      {/* Overall checkbox */}
                       <button
-                        onClick={() => workout.id != null && handleWorkoutToggle(workout.id)}
+                        onClick={() => handleWorkoutToggle(wid, workout.exercises.length)}
                         disabled={toggling}
                         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
-                          done
+                          done || allExDone
                             ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
                             : 'border-border hover:border-ink-light dark:border-border-dark dark:hover:border-gray-500'
                         } ${toggling ? 'opacity-50' : 'active:scale-90'}`}
                       >
-                        {done && (
+                        {(done || allExDone) && (
                           <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         )}
                       </button>
                       <span className="text-sm text-ink-light dark:text-gray-400">{workout.emoji}</span>
-                      {/* Name + expand */}
                       <button
-                        onClick={() => setExpandedWorkout(isExpanded ? null : workout.id!)}
+                        onClick={() => setExpandedWorkout(isExpanded ? null : wid)}
                         className="flex flex-1 items-center gap-2 text-left"
                       >
                         <span className={`flex-1 text-sm transition-colors ${
-                          done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
+                          done || allExDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
                         }`}>
                           {workout.name}
                         </span>
-                        <span className="rounded border border-border px-1.5 py-0.5 text-[9px] text-muted dark:border-border-dark">
-                          {workout.exercises.length} ex.
+                        <span className="text-[10px] text-muted">
+                          {exDoneCount}/{workout.exercises.length}
                         </span>
                         <svg className={`h-3 w-3 shrink-0 text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -163,19 +183,41 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                         </svg>
                       </button>
                     </div>
-                    {/* Expanded exercises */}
+
+                    {/* Expanded exercises with individual checkboxes */}
                     {isExpanded && (
-                      <div className="border-t border-border bg-background px-4 py-2.5 dark:border-border-dark dark:bg-background-dark">
-                        <ul className="space-y-1">
-                          {workout.exercises.map((ex, i) => (
-                            <li key={i} className="flex items-baseline gap-2 text-xs">
-                              <span className="text-muted">{i + 1}.</span>
-                              <span className="flex-1 text-ink-light dark:text-gray-400">{ex.name}</span>
-                              <span className="text-muted">
-                                {ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}
-                              </span>
-                            </li>
-                          ))}
+                      <div className="border-t border-border bg-background dark:border-border-dark dark:bg-background-dark">
+                        <ul>
+                          {workout.exercises.map((ex, i) => {
+                            const exDone = done || completedExercises.has(i)
+                            return (
+                              <li key={i} className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-0 dark:border-border-dark">
+                                <button
+                                  onClick={() => !done && handleExerciseToggle(wid, i, workout.exercises.length)}
+                                  disabled={done}
+                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
+                                    exDone
+                                      ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
+                                      : 'border-border hover:border-ink-light dark:border-border-dark'
+                                  } ${done ? '' : 'active:scale-90'}`}
+                                >
+                                  {exDone && (
+                                    <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <span className={`flex-1 text-xs transition-colors ${
+                                  exDone ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'
+                                }`}>
+                                  {ex.name}
+                                </span>
+                                <span className={`text-[10px] ${exDone ? 'text-muted/50' : 'text-muted'}`}>
+                                  {ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}
+                                </span>
+                              </li>
+                            )
+                          })}
                         </ul>
                       </div>
                     )}

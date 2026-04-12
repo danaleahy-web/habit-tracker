@@ -61,6 +61,8 @@ export interface WorkoutLog {
   id?: number
   workoutId: number
   completedAt: Date
+  /** Indices of individually completed exercises */
+  completedExercises?: number[]
   notes?: string
 }
 
