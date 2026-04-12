@@ -129,7 +129,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Name */}
           <div>
-            <label htmlFor="habitName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">
+            <label htmlFor="habitName" className="mb-1.5 block text-sm font-semibold uppercase tracking-wider text-muted">
               Name
             </label>
             <input id="habitName" type="text" value={name}
@@ -140,7 +140,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
 
           {/* Symbol */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Symbol</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Symbol</label>
             <div className="flex flex-wrap gap-1.5">
               {ICON_OPTIONS.map((s) => (
                 <button key={s} type="button" onClick={() => setIcon(s)}
@@ -155,7 +155,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
 
           {/* Schedule */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Schedule</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Schedule</label>
             <div className="mb-3 flex rounded-md border border-border p-0.5 dark:border-border-dark">
               <button type="button" onClick={() => setScheduleMode('specific')}
                 className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${
@@ -194,7 +194,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
 
           {/* Period */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Period</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Period</label>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="w-12 text-xs text-muted">From</span>

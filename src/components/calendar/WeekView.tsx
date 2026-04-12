@@ -54,7 +54,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
           >
             {/* Left: day label */}
             <div className="w-10 shrink-0 pt-0.5 text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">
                 {DAY_NAMES_SHORT[day.getDay()]}
               </div>
               <div className={`text-xl font-bold leading-tight ${
@@ -110,9 +110,9 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                     <div key={a.stravaId} className="space-y-0.5">
                       <div className="flex items-center gap-1.5">
                         <span className="truncate text-xs font-medium text-ink-light dark:text-gray-400">{a.name}</span>
-                        <span className="shrink-0 rounded border border-border px-1 py-0.5 text-[8px] text-muted dark:border-border-dark">{a.type}</span>
+                        <span className="shrink-0 rounded border border-border px-1 py-0.5 text-[10px] text-muted dark:border-border-dark">{a.type}</span>
                       </div>
-                      <div className="flex gap-2 text-[10px] text-muted">
+                      <div className="flex gap-2 text-xs text-muted">
                         <span>{formatDistance(a.distanceMeters)}</span>
                         <span>{formatDuration(a.movingTimeSecs)}</span>
                       </div>

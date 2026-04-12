@@ -130,7 +130,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     <div className="flex h-full flex-col">
       {/* Date heading */}
       <div className="border-b border-border px-4 pb-2 dark:border-border-dark">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted">
           {today ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'long' })}
         </p>
         <h2 className="mt-0.5 text-lg font-bold text-ink dark:text-gray-100">
@@ -142,7 +142,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         {/* Habits */}
         {scheduledHabits.length > 0 && (
           <div className="border-b border-border dark:border-border-dark">
-            <h3 className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
+            <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
               Habits
             </h3>
             <ul>
@@ -167,7 +167,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                       )}
                     </button>
                     <span className="text-sm text-ink-light dark:text-gray-400">{habit.emoji}</span>
-                    <span className={`flex-1 text-sm transition-colors ${
+                    <span className={`flex-1 text-base transition-colors ${
                       done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
                     }`}>
                       {habit.name}
@@ -182,7 +182,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         {/* Workouts */}
         {scheduledWorkouts.length > 0 && (
           <div className="border-b border-border dark:border-border-dark">
-            <h3 className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
+            <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
               Workouts
             </h3>
             <ul>
@@ -206,7 +206,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                       <span className={`flex-1 text-sm transition-colors ${allDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'}`}>
                         {workout.name}
                       </span>
-                      <span className="text-[10px] text-muted">{doneCount}/{totalEx}</span>
+                      <span className="text-xs text-muted">{doneCount}/{totalEx}</span>
                       <svg className={`h-3 w-3 shrink-0 text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -261,15 +261,15 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                             </div>
                             <div className="mt-2 flex gap-2">
                               <button onClick={() => handleAddExtra(wid)} disabled={!extraName.trim()}
-                                className="rounded-md bg-ink px-3 py-1.5 text-[10px] font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900">
+                                className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900">
                                 Add
                               </button>
-                              <button onClick={() => setAddingExtraFor(null)} className="text-[10px] text-muted">Cancel</button>
+                              <button onClick={() => setAddingExtraFor(null)} className="text-xs text-muted">Cancel</button>
                             </div>
                           </div>
                         ) : (
                           <button onClick={() => { setAddingExtraFor(wid); setExtraName(''); setExtraSets(3); setExtraReps(10) }}
-                            className="w-full border-t border-border px-4 py-2 text-left text-[10px] text-accent underline-offset-2 hover:underline dark:border-border-dark">
+                            className="w-full border-t border-border px-4 py-2 text-left text-xs text-accent underline-offset-2 hover:underline dark:border-border-dark">
                             + Add exercise for today
                           </button>
                         )}
@@ -285,7 +285,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         {/* Progress bar (habits + workouts combined) */}
         {totalItems > 0 && (
           <div className="border-b border-border px-4 py-2.5 dark:border-border-dark">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-xs">
               <span className="text-muted">{totalCompleted} of {totalItems}</span>
               <span className="font-semibold text-ink-light dark:text-gray-400">
                 {Math.round((totalCompleted / totalItems) * 100)}%
@@ -310,7 +310,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
         {/* Strava Activities */}
         <div>
-          <h3 className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
+          <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
             Activities
           </h3>
           {activities.length === 0 ? (
@@ -350,12 +350,12 @@ function ExerciseRow({ name, detail, done, onToggle, onRemove }: {
           </svg>
         )}
       </button>
-      <span className={`flex-1 text-xs transition-colors ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'}`}>
+      <span className={`flex-1 text-sm transition-colors ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'}`}>
         {name}
       </span>
       <span className={`text-[10px] ${done ? 'text-muted/50' : 'text-muted'}`}>{detail}</span>
       {onRemove && (
-        <button onClick={onRemove} className="text-[10px] text-red-400 hover:text-red-600">×</button>
+        <button onClick={onRemove} className="text-xs text-red-400 hover:text-red-600">×</button>
       )}
     </li>
   )

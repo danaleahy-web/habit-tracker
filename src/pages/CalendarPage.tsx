@@ -83,7 +83,7 @@ export function CalendarPage() {
         <div className="mx-auto flex rounded-md border border-border p-0.5 dark:border-border-dark">
           {VIEW_MODES.map((mode) => (
             <button key={mode} onClick={() => setViewMode(mode)}
-              className={`flex-1 rounded-[4px] py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all ${
+              className={`flex-1 rounded-[4px] py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
                 viewMode === mode
                   ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
                   : 'text-muted hover:text-ink dark:hover:text-gray-300'
@@ -101,7 +101,7 @@ export function CalendarPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-base font-bold text-ink dark:text-gray-100">{heading}</h1>
+          <h1 className="text-lg font-bold text-ink dark:text-gray-100">{heading}</h1>
           <button onClick={goForward} aria-label="Next"
             className="flex h-7 w-7 items-center justify-center rounded text-muted">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -115,7 +115,7 @@ export function CalendarPage() {
       <div className="flex-1 overflow-y-auto pb-2" {...swipeHandlers}>
         {/* Floating Today button */}
         <button onClick={goToday}
-          className="fixed bottom-14 right-3 z-50 rounded-md border border-border bg-paper px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink shadow-sm transition-all active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
+          className="fixed bottom-14 right-3 z-50 rounded-md border border-border bg-paper px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink shadow-sm transition-all active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
           Today
         </button>
 

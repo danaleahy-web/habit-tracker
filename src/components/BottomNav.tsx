@@ -15,7 +15,7 @@ export function BottomNav() {
           to={tab.to}
           end={tab.to === '/'}
           className={({ isActive }) =>
-            `flex flex-1 flex-col items-center py-2.5 text-[10px] uppercase tracking-widest transition-colors ${
+            `flex flex-1 flex-col items-center py-2.5 text-xs uppercase tracking-widest transition-colors ${
               isActive
                 ? 'font-semibold text-ink dark:text-gray-100'
                 : 'text-muted dark:text-gray-500'

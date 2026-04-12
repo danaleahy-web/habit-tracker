@@ -102,7 +102,7 @@ export function HabitsPage() {
       {/* Habits */}
       {activeHabits.length > 0 && (
         <div className="mt-4">
-          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Habits</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted">Habits</h2>
           <ul className="space-y-1.5">
             {activeHabits.map((h) => (
               <ItemCard key={`h-${h.id}`} symbol={h.emoji} name={h.name}
@@ -118,7 +118,7 @@ export function HabitsPage() {
       {/* Workouts */}
       {activeWorkouts.length > 0 && (
         <div className="mt-4">
-          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Workouts</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted">Workouts</h2>
           <ul className="space-y-1.5">
             {activeWorkouts.map((w) => (
               <WorkoutCard key={`w-${w.id}`} workout={w}
@@ -134,7 +134,7 @@ export function HabitsPage() {
       {archivedItems.length > 0 && (
         <div className="mt-8">
           <button onClick={() => setShowArchived((v) => !v)}
-            className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted">
             <svg className={`h-3 w-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -237,7 +237,7 @@ function ItemCard({ symbol, name, subtitle, onEdit, onArchive, onDelete }: {
         <span className="text-base text-ink dark:text-gray-300">{symbol}</span>
         <div className="flex-1">
           <p className="text-sm font-medium text-ink dark:text-gray-100">{name}</p>
-          <p className="text-[11px] text-muted">{subtitle}</p>
+          <p className="text-xs text-muted">{subtitle}</p>
         </div>
         <svg className={`h-3.5 w-3.5 text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -266,9 +266,9 @@ function WorkoutCard({ workout, onEdit, onArchive, onDelete }: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-ink dark:text-gray-100">{workout.name}</p>
-            <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted dark:border-border-dark">{workout.type}</span>
+            <span className="rounded border border-border px-1.5 py-0.5 text-xs text-muted dark:border-border-dark">{workout.type}</span>
           </div>
-          <p className="text-[11px] text-muted">{formatSchedule(workout)}{workout.exercises.length > 0 ? ` · ${workout.exercises.length} ex.` : ''}</p>
+          <p className="text-xs text-muted">{formatSchedule(workout)}{workout.exercises.length > 0 ? ` · ${workout.exercises.length} ex.` : ''}</p>
         </div>
         <svg className={`h-3.5 w-3.5 text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -281,7 +281,7 @@ function WorkoutCard({ workout, onEdit, onArchive, onDelete }: {
             <ul className="space-y-1">
               {workout.exercises.map((ex, i) => (
                 <li key={i} className="flex items-baseline gap-2 text-sm">
-                  <span className="text-[11px] text-muted">{i + 1}.</span>
+                  <span className="text-xs text-muted">{i + 1}.</span>
                   <span className="flex-1 text-ink-light dark:text-gray-300">{ex.name}</span>
                   <span className="text-xs text-muted">{ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}</span>
                 </li>

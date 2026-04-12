@@ -116,14 +116,14 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="wName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Workout Name</label>
+            <label htmlFor="wName" className="mb-1.5 block text-sm font-semibold uppercase tracking-wider text-muted">Workout Name</label>
             <input id="wName" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Core Workout" autoFocus className={inputCls} />
           </div>
 
           {/* Symbol + Category row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Symbol</label>
+              <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Symbol</label>
               <div className="flex flex-wrap gap-1.5">
                 {ICON_OPTIONS.map((s) => (
                   <button key={s} type="button" onClick={() => setIcon(s)}
@@ -132,7 +132,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
               </div>
             </div>
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Category</label>
+              <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Category</label>
               <div className="flex flex-wrap gap-1.5">
                 {WORKOUT_TYPES.map((t) => (
                   <button key={t} type="button" onClick={() => setType(t)}
@@ -144,7 +144,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
           {/* Exercises */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Exercises ({validExercises.length})</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Exercises ({validExercises.length})</label>
             <div className="space-y-2">
               {exercises.map((ex, i) => (
                 <div key={i} className="rounded-lg border border-border bg-background p-3 dark:border-border-dark dark:bg-background-dark">
@@ -158,15 +158,15 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Sets</label>
+                      <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Sets</label>
                       <input type="number" min={1} value={ex.sets} onChange={(e) => updateExercise(i, 'sets', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
                     </div>
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Reps</label>
+                      <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Reps</label>
                       <input type="number" min={1} value={ex.reps} onChange={(e) => updateExercise(i, 'reps', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
                     </div>
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Weight</label>
+                      <label className="mb-0.5 block text-[10px] font-semibold uppercase text-muted">Weight</label>
                       <div className="flex">
                         <input type="number" min={0} step={0.5} value={ex.weight ?? ''} placeholder="—"
                           onChange={(e) => updateExercise(i, 'weight', parseFloat(e.target.value) || 0)}
@@ -187,7 +187,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
           {/* Schedule */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Schedule</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Schedule</label>
             <div className="mb-3 flex rounded-md border border-border p-0.5 dark:border-border-dark">
               <button type="button" onClick={() => setScheduleMode('specific')}
                 className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${scheduleMode === 'specific' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'}`}>Specific days</button>
@@ -217,7 +217,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
           {/* Period */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Period</label>
+            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Period</label>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="w-12 text-xs text-muted">From</span>

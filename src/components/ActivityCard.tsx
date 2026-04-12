@@ -63,7 +63,7 @@ export function ActivityCard({ activity, compact }: ActivityCardProps) {
     return (
       <div className="flex items-baseline gap-2 text-xs">
         <span className="font-medium text-ink-light dark:text-gray-400">{activity.name}</span>
-        <span className="rounded border border-border px-1 py-0.5 text-[9px] text-muted dark:border-border-dark">{activity.type}</span>
+        <span className="rounded border border-border px-1 py-0.5 text-xs text-muted dark:border-border-dark">{activity.type}</span>
       </div>
     )
   }
@@ -75,7 +75,7 @@ export function ActivityCard({ activity, compact }: ActivityCardProps) {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-ink dark:text-gray-100">{activity.name}</span>
-            <span className="rounded border border-border px-1.5 py-0.5 text-[9px] text-muted dark:border-border-dark">
+            <span className="rounded border border-border px-1.5 py-0.5 text-xs text-muted dark:border-border-dark">
               {activity.type}
             </span>
           </div>
@@ -133,7 +133,7 @@ function StatCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md bg-background px-2 py-1.5 dark:bg-background-dark">
       <p className="text-xs font-semibold text-ink dark:text-gray-200">{value}</p>
-      <p className="text-[9px] text-muted">{label}</p>
+      <p className="text-xs text-muted">{label}</p>
     </div>
   )
 }
