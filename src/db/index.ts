@@ -11,7 +11,10 @@ export interface Habit {
   id?: number
   name: string
   emoji: string
+  /** How many times per week (used when scheduledDays is empty) */
   frequencyPerWeek: number
+  /** Specific days of the week: 0=Sun, 1=Mon, ..., 6=Sat. Empty = flexible. */
+  scheduledDays?: number[]
   createdAt: Date
   archivedAt?: Date
 }

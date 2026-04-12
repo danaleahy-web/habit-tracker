@@ -19,7 +19,7 @@ export async function createHabit(
 
 export async function updateHabit(
   id: number,
-  changes: Partial<Pick<Habit, 'name' | 'emoji' | 'frequencyPerWeek'>>
+  changes: Partial<Pick<Habit, 'name' | 'emoji' | 'frequencyPerWeek' | 'scheduledDays'>>
 ): Promise<void> {
   await db.habits.update(id, changes)
 }

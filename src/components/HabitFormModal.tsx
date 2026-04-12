@@ -1,50 +1,101 @@
 import { useState, useEffect } from 'react'
 import type { Habit } from '../db/index'
 
-/** Minimal bullet-journal symbols for habit icons */
 const ICON_OPTIONS = [
   '●', '○', '◆', '◇', '■', '□', '▲', '△',
   '★', '☆', '✦', '✧', '◉', '◎', '▪', '▫',
   '⬡', '⬢', '◈', '✕', '⊕', '⊗', '⊙', '◬',
 ]
 
-const FREQUENCY_OPTIONS = [
+const FLEX_FREQUENCY_OPTIONS = [
   { value: 7, label: 'Daily' },
-  { value: 5, label: '5× / week' },
-  { value: 3, label: '3× / week' },
-  { value: 2, label: '2× / week' },
-  { value: 1, label: '1× / week' },
+  { value: 6, label: '6×' },
+  { value: 5, label: '5×' },
+  { value: 4, label: '4×' },
+  { value: 3, label: '3×' },
+  { value: 2, label: '2×' },
+  { value: 1, label: '1×' },
 ]
+
+const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] // Sun–Sat
+
+type ScheduleMode = 'specific' | 'flexible'
 
 interface HabitFormModalProps {
   open: boolean
   onClose: () => void
-  onSave: (data: { name: string; emoji: string; frequencyPerWeek: number }) => void
+  onSave: (data: { name: string; emoji: string; frequencyPerWeek: number; scheduledDays?: number[] }) => void
   habit?: Habit
 }
 
 export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalProps) {
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('●')
-  const [frequency, setFrequency] = useState(7)
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('specific')
+  const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
+  const [flexFrequency, setFlexFrequency] = useState(3)
 
   useEffect(() => {
     if (open) {
       setName(habit?.name ?? '')
       setIcon(habit?.emoji ?? '●')
-      setFrequency(habit?.frequencyPerWeek ?? 7)
+
+      if (habit?.scheduledDays && habit.scheduledDays.length > 0) {
+        setScheduleMode('specific')
+        setSelectedDays(new Set(habit.scheduledDays))
+      } else {
+        // Check if it was a "daily" habit (all 7 days)
+        if (habit?.frequencyPerWeek === 7) {
+          setScheduleMode('specific')
+          setSelectedDays(new Set([0, 1, 2, 3, 4, 5, 6]))
+        } else {
+          setScheduleMode('flexible')
+          setFlexFrequency(habit?.frequencyPerWeek ?? 3)
+        }
+      }
+
+      // For new habits, default to specific with weekdays selected
+      if (!habit) {
+        setScheduleMode('specific')
+        setSelectedDays(new Set([1, 2, 3, 4, 5])) // Mon–Fri
+      }
     }
   }, [open, habit])
 
   if (!open) return null
 
   const isEditing = !!habit
-  const canSave = name.trim().length > 0
+  const canSave = name.trim().length > 0 &&
+    (scheduleMode === 'flexible' || selectedDays.size > 0)
+
+  const toggleDay = (day: number) => {
+    setSelectedDays((prev) => {
+      const next = new Set(prev)
+      next.has(day) ? next.delete(day) : next.add(day)
+      return next
+    })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSave) return
-    onSave({ name: name.trim(), emoji: icon, frequencyPerWeek: frequency })
+
+    if (scheduleMode === 'specific') {
+      const days = [...selectedDays].sort()
+      onSave({
+        name: name.trim(),
+        emoji: icon,
+        frequencyPerWeek: days.length,
+        scheduledDays: days,
+      })
+    } else {
+      onSave({
+        name: name.trim(),
+        emoji: icon,
+        frequencyPerWeek: flexFrequency,
+        scheduledDays: [],
+      })
+    }
   }
 
   return (
@@ -75,7 +126,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
             />
           </div>
 
-          {/* Icon picker */}
+          {/* Symbol */}
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">
               Symbol
@@ -98,27 +149,83 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
             </div>
           </div>
 
-          {/* Frequency */}
+          {/* Schedule */}
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">
-              Frequency
+              Schedule
             </label>
-            <div className="flex flex-wrap gap-2">
-              {FREQUENCY_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setFrequency(opt.value)}
-                  className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                    frequency === opt.value
-                      ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
-                      : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400 dark:hover:bg-border-dark'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+
+            {/* Mode toggle */}
+            <div className="mb-3 flex rounded-md border border-border p-0.5 dark:border-border-dark">
+              <button type="button" onClick={() => setScheduleMode('specific')}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${
+                  scheduleMode === 'specific'
+                    ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
+                    : 'text-muted'
+                }`}>
+                Specific days
+              </button>
+              <button type="button" onClick={() => setScheduleMode('flexible')}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${
+                  scheduleMode === 'flexible'
+                    ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
+                    : 'text-muted'
+                }`}>
+                Times per week
+              </button>
             </div>
+
+            {scheduleMode === 'specific' ? (
+              /* Day picker */
+              <div className="flex justify-between gap-1">
+                {DAY_LABELS.map((label, dayIndex) => (
+                  <button
+                    key={dayIndex}
+                    type="button"
+                    onClick={() => toggleDay(dayIndex)}
+                    className={`flex h-10 flex-1 items-center justify-center rounded-md text-sm font-semibold transition-all ${
+                      selectedDays.has(dayIndex)
+                        ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
+                        : 'bg-background text-muted hover:bg-border dark:bg-background-dark dark:hover:bg-border-dark'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* Flexible frequency */
+              <div className="flex flex-wrap gap-1.5">
+                {FLEX_FREQUENCY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFlexFrequency(opt.value)}
+                    className={`rounded-md px-3.5 py-2 text-sm font-medium transition-all ${
+                      flexFrequency === opt.value
+                        ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
+                        : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400 dark:hover:bg-border-dark'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Summary */}
+            <p className="mt-2 text-xs text-muted">
+              {scheduleMode === 'specific'
+                ? selectedDays.size === 0
+                  ? 'Select at least one day'
+                  : selectedDays.size === 7
+                    ? 'Every day'
+                    : [...selectedDays].sort().map((d) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')
+                : flexFrequency === 7
+                  ? 'Every day'
+                  : `Any ${flexFrequency} day${flexFrequency !== 1 ? 's' : ''} per week`
+              }
+            </p>
           </div>
 
           {/* Actions */}

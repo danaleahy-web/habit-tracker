@@ -42,7 +42,7 @@ export function HabitsPage() {
     if (t === 'workout') { setEditingWorkout(undefined); setWorkoutModalOpen(true) }
   }
 
-  const handleSaveHabit = async (data: { name: string; emoji: string; frequencyPerWeek: number }) => {
+  const handleSaveHabit = async (data: { name: string; emoji: string; frequencyPerWeek: number; scheduledDays?: number[] }) => {
     if (editingHabit?.id != null) await updateHabit(editingHabit.id, data)
     else await createHabit(data)
     setHabitModalOpen(false); setEditingHabit(undefined); await refresh()
@@ -71,7 +71,14 @@ export function HabitsPage() {
     setConfirmDelete(null); await refresh()
   }
 
-  const frequencyLabel = (n: number) => n === 7 ? 'Daily' : `${n}× / week`
+  const frequencyLabel = (h: Habit) => {
+    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    if (h.scheduledDays && h.scheduledDays.length > 0) {
+      if (h.scheduledDays.length === 7) return 'Every day'
+      return h.scheduledDays.map((d) => DAY_NAMES[d]).join(', ')
+    }
+    return h.frequencyPerWeek === 7 ? 'Daily' : `${h.frequencyPerWeek}× / week`
+  }
   const isEmpty = activeHabits.length === 0 && activeWorkouts.length === 0
 
   if (loading) {
@@ -105,7 +112,7 @@ export function HabitsPage() {
           <ul className="space-y-1.5">
             {activeHabits.map((h) => (
               <ItemCard key={`h-${h.id}`} symbol={h.emoji} name={h.name}
-                subtitle={frequencyLabel(h.frequencyPerWeek)}
+                subtitle={frequencyLabel(h)}
                 onEdit={() => { setEditingHabit(h); setHabitModalOpen(true) }}
                 onArchive={() => handleArchive('habit', h.id!)}
                 onDelete={() => setConfirmDelete({ type: 'habit', id: h.id! })} />
