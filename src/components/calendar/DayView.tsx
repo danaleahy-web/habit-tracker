@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
@@ -37,6 +37,14 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [extraName, setExtraName] = useState('')
   const [extraSets, setExtraSets] = useState(3)
   const [extraReps, setExtraReps] = useState(10)
+
+  // Debounced data change — syncs to other views after a pause
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedDataChange = useCallback(() => {
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    syncTimer.current = setTimeout(() => onDataChange?.(), 800)
+  }, [onDataChange])
+  useEffect(() => () => { if (syncTimer.current) clearTimeout(syncTimer.current) }, [])
 
   // Habit toggle
   const handleHabitToggle = async (habitId: number) => {
@@ -97,7 +105,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     next.has(extraIndex) ? next.delete(extraIndex) : next.add(extraIndex)
     setLocalExtraOverrides((prev) => new Map(prev).set(key, next))
     await toggleExtraExercise(workoutId, date, extraIndex)
-    onDataChange?.()
+    debouncedDataChange()
   }
 
   const handleRemoveExtra = async (workoutId: number, extraIndex: number) => {
@@ -115,9 +123,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     // Optimistic update
     setLocalExOverrides((prev) => new Map(prev).set(key, next))
 
-    // Persist to DB then notify parent
+    // Persist to DB, debounce sync to other views
     await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
-    onDataChange?.()
+    debouncedDataChange()
   }
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
