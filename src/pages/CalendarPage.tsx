@@ -28,9 +28,15 @@ export function CalendarPage() {
   const initialDateStr = searchParams.get('date')
   const initialDate = initialDateStr ? fromDateKey(initialDateStr) : new Date()
 
-  const [viewMode, setViewMode] = useState<ViewMode>(initialView)
+  const [viewMode, setViewModeRaw] = useState<ViewMode>(initialView)
   const [selectedDate, setSelectedDate] = useState(() => initialDate)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Refresh data whenever view mode changes so other views get fresh DB state
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeRaw(mode)
+    setRefreshKey((k) => k + 1)
+  }, [])
 
   // Sync state changes back to URL (replace, don't push history)
   useEffect(() => {
