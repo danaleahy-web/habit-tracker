@@ -202,7 +202,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                     {/* Workout header */}
                     <button onClick={() => setExpandedWorkout(isExpanded ? null : wid)}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left">
-                      <span className="text-sm text-ink-light dark:text-gray-400">{workout.emoji}</span>
                       <span className={`flex-1 text-sm transition-colors ${allDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'}`}>
                         {workout.name}
                       </span>

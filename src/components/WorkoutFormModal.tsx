@@ -2,10 +2,6 @@ import { useState, useEffect } from 'react'
 import type { Workout, Exercise } from '../db/index'
 import { toDateKey } from '../lib/dates'
 
-const WORKOUT_TYPES = ['Strength', 'Core', 'Cardio', 'Flexibility', 'HIIT', 'Sport', 'Other']
-
-const ICON_OPTIONS = ['●', '◆', '■', '▲', '★', '✦', '◉', '⬢']
-
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 const FLEX_FREQ = [
@@ -36,8 +32,6 @@ interface WorkoutFormModalProps {
 
 export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutFormModalProps) {
   const [name, setName] = useState('')
-  const [icon, setIcon] = useState('●')
-  const [type, setType] = useState('Strength')
   const [exercises, setExercises] = useState<Exercise[]>([emptyExercise()])
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('specific')
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
@@ -49,8 +43,6 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
   useEffect(() => {
     if (open) {
       setName(workout?.name ?? '')
-      setIcon(workout?.emoji ?? '●')
-      setType(workout?.type ?? 'Strength')
       setExercises(workout?.exercises?.length ? workout.exercises.map((e) => ({ ...e })) : [emptyExercise()])
 
       if (workout?.scheduledDays && workout.scheduledDays.length > 0) {
@@ -70,7 +62,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
       if (!workout) {
         setScheduleMode('specific')
-        setSelectedDays(new Set([1, 3, 5])) // Mon/Wed/Fri
+        setSelectedDays(new Set([1, 3, 5]))
         setStartDate(toDateKey(new Date()))
         setHasEndDate(false)
       }
@@ -94,7 +86,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
     e.preventDefault()
     if (!canSave) return
     onSave({
-      name: name.trim(), emoji: icon, type, exercises: validExercises,
+      name: name.trim(), emoji: '●', type: 'Workout', exercises: validExercises,
       scheduledDays: scheduleMode === 'specific' ? [...selectedDays].sort() : [],
       frequencyPerWeek: scheduleMode === 'specific' ? selectedDays.size : flexFrequency,
       startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
@@ -110,36 +102,13 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
       <div className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-paper px-5 pb-6 pt-3 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
         <div className="mx-auto mb-4 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
-        <h2 className="mb-1 text-lg font-bold text-ink dark:text-gray-100">{isEditing ? 'Edit Workout' : 'New Workout'}</h2>
-        <p className="mb-4 text-sm text-muted">Build a routine with multiple exercises</p>
+        <h2 className="mb-4 text-lg font-bold text-ink dark:text-gray-100">{isEditing ? 'Edit Workout' : 'New Workout'}</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="wName" className="mb-1.5 block text-sm font-semibold uppercase tracking-wider text-muted">Workout Name</label>
+            <label htmlFor="wName" className="mb-1.5 block text-sm font-semibold uppercase tracking-wider text-muted">Name</label>
             <input id="wName" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Core Workout" autoFocus className={inputCls} />
-          </div>
-
-          {/* Symbol + Category row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Symbol</label>
-              <div className="flex flex-wrap gap-1.5">
-                {ICON_OPTIONS.map((s) => (
-                  <button key={s} type="button" onClick={() => setIcon(s)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-md text-base transition-all ${icon === s ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'}`}>{s}</button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Category</label>
-              <div className="flex flex-wrap gap-1.5">
-                {WORKOUT_TYPES.map((t) => (
-                  <button key={t} type="button" onClick={() => setType(t)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${type === t ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'}`}>{t}</button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Exercises */}
@@ -149,7 +118,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
               {exercises.map((ex, i) => (
                 <div key={i} className="rounded-lg border border-border bg-background p-3 dark:border-border-dark dark:bg-background-dark">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-muted">{i + 1}.</span>
+                    <span className="text-xs text-muted">{i + 1}.</span>
                     <input type="text" value={ex.name} onChange={(e) => updateExercise(i, 'name', e.target.value)} placeholder="Exercise name" className={`flex-1 ${inputCls}`} />
                     {exercises.length > 1 && (
                       <button type="button" onClick={() => setExercises((p) => p.filter((_, idx) => idx !== i))}
@@ -172,7 +141,7 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
                           onChange={(e) => updateExercise(i, 'weight', parseFloat(e.target.value) || 0)}
                           className={inputCls + ' rounded-r-none border-r-0 text-center'} />
                         <button type="button" onClick={() => updateExercise(i, 'unit', ex.unit === 'kg' ? 'lbs' : 'kg')}
-                          className="rounded-r-md border border-border bg-background px-2 text-[10px] font-bold text-muted dark:border-border-dark dark:bg-background-dark">{ex.unit || 'kg'}</button>
+                          className="rounded-r-md border border-border bg-background px-2 text-xs font-bold text-muted dark:border-border-dark dark:bg-background-dark">{ex.unit || 'kg'}</button>
                       </div>
                     </div>
                   </div>

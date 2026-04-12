@@ -92,8 +92,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                   {scheduledWorkouts.map((w) => {
                     const done = w.id != null && loggedWorkoutIds.has(w.id)
                     return (
-                      <div key={w.id} className="flex items-center gap-1.5 truncate">
-                        <span className={`text-xs ${done ? 'text-accent' : 'text-ink dark:text-gray-400'}`}>{w.emoji}</span>
+                      <div key={w.id} className="truncate">
                         <span className={`truncate text-xs ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
                           {w.name}
                         </span>

@@ -262,13 +262,9 @@ function WorkoutCard({ workout, onEdit, onArchive, onDelete }: {
   return (
     <li className="border-b border-border dark:border-border-dark">
       <button onClick={() => setExpanded((v) => !v)} className="flex w-full items-center gap-3 px-1 py-3 text-left">
-        <span className="text-base text-ink dark:text-gray-300">{workout.emoji}</span>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-ink dark:text-gray-100">{workout.name}</p>
-            <span className="rounded border border-border px-1.5 py-0.5 text-xs text-muted dark:border-border-dark">{workout.type}</span>
-          </div>
-          <p className="text-xs text-muted">{formatSchedule(workout)}{workout.exercises.length > 0 ? ` · ${workout.exercises.length} ex.` : ''}</p>
+          <p className="text-sm font-medium text-ink dark:text-gray-100">{workout.name}</p>
+          <p className="text-xs text-muted">{formatSchedule(workout)}{workout.exercises.length > 0 ? ` · ${workout.exercises.length} exercises` : ''}</p>
         </div>
         <svg className={`h-3.5 w-3.5 text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
