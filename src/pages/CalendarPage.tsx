@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCalendarData } from '../hooks/useCalendarData'
+import { useSwipe } from '../hooks/useSwipe'
 import { MonthView } from '../components/calendar/MonthView'
 import { WeekView } from '../components/calendar/WeekView'
 import { DayView } from '../components/calendar/DayView'
@@ -62,6 +63,8 @@ export function CalendarPage() {
 
   const goToday = useCallback(() => setSelectedDate(new Date()), [])
 
+  const swipeHandlers = useSwipe(goForward, goBack)
+
   const handleSelectDay = useCallback((date: Date) => {
     setSelectedDate(date)
     setViewMode('day')
@@ -109,7 +112,7 @@ export function CalendarPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-2">
+      <div className="flex-1 overflow-y-auto pb-2" {...swipeHandlers}>
         {/* Floating Today button */}
         <button onClick={goToday}
           className="fixed bottom-14 right-3 z-50 rounded-md border border-border bg-paper px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink shadow-sm transition-all active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
