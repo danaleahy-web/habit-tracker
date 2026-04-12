@@ -45,6 +45,13 @@ export interface Workout {
   archivedAt?: Date
 }
 
+export interface WorkoutLog {
+  id?: number
+  workoutId: number
+  completedAt: Date
+  notes?: string
+}
+
 export interface Activity {
   id?: number
   stravaId: string
@@ -64,6 +71,7 @@ const db = new Dexie('HabitSyncDB') as Dexie & {
   habits: EntityTable<Habit, 'id'>
   habitCompletions: EntityTable<HabitCompletion, 'id'>
   workouts: EntityTable<Workout, 'id'>
+  workoutLogs: EntityTable<WorkoutLog, 'id'>
   activities: EntityTable<Activity, 'id'>
 }
 
@@ -95,6 +103,16 @@ db.version(3).stores({
   // Strip groupId from existing records
   tx.table('habits').toCollection().modify((h: Record<string, unknown>) => { delete h.groupId })
   tx.table('workouts').toCollection().modify((w: Record<string, unknown>) => { delete w.groupId })
+})
+
+// v4: Add workoutLogs table
+db.version(4).stores({
+  settings: 'key',
+  habits: '++id, name, createdAt',
+  habitCompletions: '++id, habitId, completedAt, [habitId+completedAt]',
+  workouts: '++id, name, type, createdAt',
+  workoutLogs: '++id, workoutId, completedAt, [workoutId+completedAt]',
+  activities: '++id, &stravaId, type, startDate, linkedHabitId',
 })
 
 export { db }
