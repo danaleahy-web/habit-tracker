@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog } from '../../db/workouts'
+import { addNote, updateNote, deleteNote } from '../../db/notes'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
 import { isScheduledForDate } from '../../lib/schedule'
 import { ActivityCard } from '../ActivityCard'
@@ -18,6 +19,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const completions = data.completions.get(key) || []
   const workoutLogs = data.workoutLogs.get(key) || []
   const activities = data.activities.get(key) || []
+  const dayNotes = data.notes.get(key) || []
   const completedHabitIds = new Set(completions.map((c) => c.habitId))
 
   // Filter to only items scheduled for this day
@@ -26,6 +28,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
   const [pendingHabitToggles, setPendingHabitToggles] = useState<Set<number>>(new Set())
   const [expandedWorkout, setExpandedWorkout] = useState<number | null>(null)
+  const [showNoteInput, setShowNoteInput] = useState(false)
+  const [noteText, setNoteText] = useState('')
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
 
   // Habit toggle
   const handleHabitToggle = async (habitId: number) => {
@@ -247,6 +252,105 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
               {activities.map((activity) => (
                 <ActivityCard key={activity.stravaId} activity={activity} />
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div className="border-t border-border dark:border-border-dark">
+          <div className="flex items-center justify-between px-4 pt-3">
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted">
+              Notes
+            </h3>
+            {!showNoteInput && (
+              <button
+                onClick={() => { setShowNoteInput(true); setEditingNoteId(null); setNoteText('') }}
+                className="text-xs text-accent underline underline-offset-2"
+              >
+                + Add
+              </button>
+            )}
+          </div>
+
+          {/* Existing notes */}
+          {dayNotes.length > 0 && (
+            <ul className="mt-1">
+              {dayNotes.map((note) => (
+                <li key={note.id} className="group border-t border-border px-4 py-2.5 dark:border-border-dark">
+                  {editingNoteId === note.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        rows={2}
+                        autoFocus
+                        className="w-full rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (noteText.trim()) { await updateNote(note.id!, noteText.trim()); onDataChange?.() }
+                            setEditingNoteId(null); setNoteText('')
+                          }}
+                          className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper dark:bg-gray-200 dark:text-gray-900"
+                        >Save</button>
+                        <button onClick={() => { setEditingNoteId(null); setNoteText('') }}
+                          className="text-xs text-muted">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <p className="flex-1 whitespace-pre-wrap text-sm text-ink-light dark:text-gray-300">
+                        {note.content}
+                      </p>
+                      <div className="flex shrink-0 gap-2 opacity-0 transition-opacity group-hover:opacity-100"
+                        style={{ opacity: undefined }}>
+                        <button
+                          onClick={() => { setEditingNoteId(note.id!); setNoteText(note.content) }}
+                          className="text-[10px] text-muted underline underline-offset-2"
+                        >Edit</button>
+                        <button
+                          onClick={async () => { await deleteNote(note.id!); onDataChange?.() }}
+                          className="text-[10px] text-red-400 underline underline-offset-2"
+                        >Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* New note input */}
+          {showNoteInput && (
+            <div className="border-t border-border px-4 py-3 dark:border-border-dark">
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add a note, reminder, or one-off activity..."
+                rows={2}
+                autoFocus
+                className="w-full rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (noteText.trim()) { await addNote(date, noteText.trim()); onDataChange?.() }
+                    setShowNoteInput(false); setNoteText('')
+                  }}
+                  disabled={!noteText.trim()}
+                  className="rounded-md bg-ink px-4 py-1.5 text-xs font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900"
+                >Save</button>
+                <button onClick={() => { setShowNoteInput(false); setNoteText('') }}
+                  className="text-xs text-muted">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {dayNotes.length === 0 && !showNoteInput && (
+            <div className="px-4 py-4 text-center">
+              <p className="text-xs text-muted">No notes for this day.</p>
             </div>
           )}
         </div>

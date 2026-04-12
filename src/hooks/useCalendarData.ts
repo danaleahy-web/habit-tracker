@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { db, type Habit, type HabitCompletion, type Workout, type WorkoutLog, type Activity } from '../db/index'
+import { db, type Habit, type HabitCompletion, type Workout, type WorkoutLog, type JournalNote, type Activity } from '../db/index'
 import { toDateKey } from '../lib/dates'
 
 export interface CalendarData {
@@ -7,6 +7,7 @@ export interface CalendarData {
   completions: Map<string, HabitCompletion[]>
   workouts: Workout[]
   workoutLogs: Map<string, WorkoutLog[]>
+  notes: Map<string, JournalNote[]>
   activities: Map<string, Activity[]>
   loading: boolean
 }
@@ -16,6 +17,7 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
   const [completions, setCompletions] = useState<Map<string, HabitCompletion[]>>(new Map())
   const [workouts, setWorkouts] = useState<Workout[]>([])
   const [workoutLogs, setWorkoutLogs] = useState<Map<string, WorkoutLog[]>>(new Map())
+  const [notes, setNotes] = useState<Map<string, JournalNote[]>>(new Map())
   const [activities, setActivities] = useState<Map<string, Activity[]>>(new Map())
   const [loading, setLoading] = useState(true)
 
@@ -40,6 +42,11 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
         .between(new Date(startKey), new Date(endKey + 'T23:59:59'), true, true)
         .toArray()
 
+      const rangeNotes = await db.journalNotes
+        .where('date')
+        .between(new Date(startKey), new Date(endKey + 'T23:59:59'), true, true)
+        .toArray()
+
       const rangeActivities = await db.activities
         .where('startDate')
         .between(new Date(startKey), new Date(endKey + 'T23:59:59'), true, true)
@@ -47,7 +54,6 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
 
       if (cancelled) return
 
-      // Group completions by date
       const compMap = new Map<string, HabitCompletion[]>()
       for (const c of rangeCompletions) {
         const key = toDateKey(c.completedAt)
@@ -56,7 +62,6 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
         compMap.set(key, arr)
       }
 
-      // Group workout logs by date
       const wlMap = new Map<string, WorkoutLog[]>()
       for (const l of rangeWorkoutLogs) {
         const key = toDateKey(l.completedAt)
@@ -65,7 +70,14 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
         wlMap.set(key, arr)
       }
 
-      // Group activities by date
+      const noteMap = new Map<string, JournalNote[]>()
+      for (const n of rangeNotes) {
+        const key = toDateKey(n.date)
+        const arr = noteMap.get(key) || []
+        arr.push(n)
+        noteMap.set(key, arr)
+      }
+
       const actMap = new Map<string, Activity[]>()
       for (const a of rangeActivities) {
         const key = toDateKey(a.startDate)
@@ -78,6 +90,7 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
       setCompletions(compMap)
       setWorkouts(allWorkouts)
       setWorkoutLogs(wlMap)
+      setNotes(noteMap)
       setActivities(actMap)
       setLoading(false)
     }
@@ -86,5 +99,5 @@ export function useCalendarData(startDate: Date, endDate: Date, refreshKey = 0):
     return () => { cancelled = true }
   }, [startKey, endKey, refreshKey])
 
-  return { habits, completions, workouts, workoutLogs, activities, loading }
+  return { habits, completions, workouts, workoutLogs, notes, activities, loading }
 }

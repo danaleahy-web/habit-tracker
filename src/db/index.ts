@@ -66,6 +66,13 @@ export interface WorkoutLog {
   notes?: string
 }
 
+export interface JournalNote {
+  id?: number
+  date: Date
+  content: string
+  createdAt: Date
+}
+
 export interface Activity {
   id?: number
   stravaId: string
@@ -86,6 +93,7 @@ const db = new Dexie('HabitSyncDB') as Dexie & {
   habitCompletions: EntityTable<HabitCompletion, 'id'>
   workouts: EntityTable<Workout, 'id'>
   workoutLogs: EntityTable<WorkoutLog, 'id'>
+  journalNotes: EntityTable<JournalNote, 'id'>
   activities: EntityTable<Activity, 'id'>
 }
 
@@ -126,6 +134,17 @@ db.version(4).stores({
   habitCompletions: '++id, habitId, completedAt, [habitId+completedAt]',
   workouts: '++id, name, type, createdAt',
   workoutLogs: '++id, workoutId, completedAt, [workoutId+completedAt]',
+  activities: '++id, &stravaId, type, startDate, linkedHabitId',
+})
+
+// v5: Add journalNotes table
+db.version(5).stores({
+  settings: 'key',
+  habits: '++id, name, createdAt',
+  habitCompletions: '++id, habitId, completedAt, [habitId+completedAt]',
+  workouts: '++id, name, type, createdAt',
+  workoutLogs: '++id, workoutId, completedAt, [workoutId+completedAt]',
+  journalNotes: '++id, date, createdAt',
   activities: '++id, &stravaId, type, startDate, linkedHabitId',
 })
 
