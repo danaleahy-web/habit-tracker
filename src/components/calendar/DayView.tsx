@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
@@ -26,7 +26,13 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, date))
 
   const [pendingHabitToggles, setPendingHabitToggles] = useState<Set<number>>(new Set())
-  const [expandedWorkout, setExpandedWorkout] = useState<number | null>(null)
+  const expandedWorkoutRef = useRef<number | null>(null)
+  const [, forceRender] = useState(0)
+  const expandedWorkout = expandedWorkoutRef.current
+  const setExpandedWorkout = (v: number | null) => {
+    expandedWorkoutRef.current = v
+    forceRender((n) => n + 1)
+  }
   const [addingExtraFor, setAddingExtraFor] = useState<number | null>(null)
   const [extraName, setExtraName] = useState('')
   const [extraSets, setExtraSets] = useState(3)
@@ -91,6 +97,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     next.has(extraIndex) ? next.delete(extraIndex) : next.add(extraIndex)
     setLocalExtraOverrides((prev) => new Map(prev).set(key, next))
     await toggleExtraExercise(workoutId, date, extraIndex)
+    onDataChange?.()
   }
 
   const handleRemoveExtra = async (workoutId: number, extraIndex: number) => {
@@ -108,8 +115,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     // Optimistic update
     setLocalExOverrides((prev) => new Map(prev).set(key, next))
 
-    // Persist to DB
+    // Persist to DB then notify parent
     await toggleExerciseInLog(workoutId, date, exerciseIndex, totalExercises)
+    onDataChange?.()
   }
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
