@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react'
 import type { Workout, Exercise } from '../db/index'
+import { toDateKey } from '../lib/dates'
 
 const WORKOUT_TYPES = ['Strength', 'Core', 'Cardio', 'Flexibility', 'HIIT', 'Sport', 'Other']
 
-const ICON_OPTIONS = [
-  '●', '◆', '■', '▲', '★', '✦', '◉', '⬢',
+const ICON_OPTIONS = ['●', '◆', '■', '▲', '★', '✦', '◉', '⬢']
+
+const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+const FLEX_FREQ = [
+  { value: 7, label: 'Daily' },
+  { value: 5, label: '5×' },
+  { value: 4, label: '4×' },
+  { value: 3, label: '3×' },
+  { value: 2, label: '2×' },
+  { value: 1, label: '1×' },
 ]
 
-const emptyExercise = (): Exercise => ({
-  name: '',
-  sets: 3,
-  reps: 10,
-  weight: undefined,
-  unit: 'kg',
-  notes: '',
-})
+type ScheduleMode = 'specific' | 'flexible'
+
+const emptyExercise = (): Exercise => ({ name: '', sets: 3, reps: 10, weight: undefined, unit: 'kg', notes: '' })
+
+export interface WorkoutFormData {
+  name: string; emoji: string; type: string; exercises: Exercise[]
+  scheduledDays?: number[]; frequencyPerWeek?: number
+  startDate?: Date; endDate?: Date
+}
 
 interface WorkoutFormModalProps {
   open: boolean
   onClose: () => void
-  onSave: (data: { name: string; emoji: string; type: string; exercises: Exercise[] }) => void
+  onSave: (data: WorkoutFormData) => void
   workout?: Workout
 }
 
@@ -28,17 +39,41 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
   const [icon, setIcon] = useState('●')
   const [type, setType] = useState('Strength')
   const [exercises, setExercises] = useState<Exercise[]>([emptyExercise()])
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('specific')
+  const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
+  const [flexFrequency, setFlexFrequency] = useState(3)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [hasEndDate, setHasEndDate] = useState(false)
 
   useEffect(() => {
     if (open) {
       setName(workout?.name ?? '')
       setIcon(workout?.emoji ?? '●')
       setType(workout?.type ?? 'Strength')
-      setExercises(
-        workout?.exercises?.length
-          ? workout.exercises.map((e) => ({ ...e }))
-          : [emptyExercise()]
-      )
+      setExercises(workout?.exercises?.length ? workout.exercises.map((e) => ({ ...e })) : [emptyExercise()])
+
+      if (workout?.scheduledDays && workout.scheduledDays.length > 0) {
+        setScheduleMode('specific')
+        setSelectedDays(new Set(workout.scheduledDays))
+      } else if (workout?.frequencyPerWeek) {
+        setScheduleMode('flexible')
+        setFlexFrequency(workout.frequencyPerWeek)
+      } else {
+        setScheduleMode('specific')
+        setSelectedDays(new Set([1, 2, 3, 4, 5]))
+      }
+
+      setStartDate(workout?.startDate ? toDateKey(workout.startDate) : toDateKey(new Date()))
+      if (workout?.endDate) { setHasEndDate(true); setEndDate(toDateKey(workout.endDate)) }
+      else { setHasEndDate(false); setEndDate('') }
+
+      if (!workout) {
+        setScheduleMode('specific')
+        setSelectedDays(new Set([1, 3, 5])) // Mon/Wed/Fri
+        setStartDate(toDateKey(new Date()))
+        setHasEndDate(false)
+      }
     }
   }, [open, workout])
 
@@ -46,23 +81,28 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
   const isEditing = !!workout
   const validExercises = exercises.filter((e) => e.name.trim().length > 0)
-  const canSave = name.trim().length > 0 && validExercises.length > 0
+  const canSave = name.trim().length > 0 && validExercises.length > 0 &&
+    (scheduleMode === 'flexible' || selectedDays.size > 0)
+
+  const toggleDay = (d: number) => { setSelectedDays((p) => { const n = new Set(p); n.has(d) ? n.delete(d) : n.add(d); return n }) }
+
+  const updateExercise = (i: number, field: keyof Exercise, value: string | number) => {
+    setExercises((prev) => prev.map((ex, idx) => (idx === i ? { ...ex, [field]: value } : ex)))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSave) return
-    onSave({ name: name.trim(), emoji: icon, type, exercises: validExercises })
+    onSave({
+      name: name.trim(), emoji: icon, type, exercises: validExercises,
+      scheduledDays: scheduleMode === 'specific' ? [...selectedDays].sort() : [],
+      frequencyPerWeek: scheduleMode === 'specific' ? selectedDays.size : flexFrequency,
+      startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
+      endDate: hasEndDate && endDate ? new Date(endDate + 'T23:59:59') : undefined,
+    })
   }
 
-  const updateExercise = (index: number, field: keyof Exercise, value: string | number) => {
-    setExercises((prev) =>
-      prev.map((ex, i) => (i === index ? { ...ex, [field]: value } : ex))
-    )
-  }
-
-  const removeExercise = (index: number) => {
-    setExercises((prev) => prev.filter((_, i) => i !== index))
-  }
+  const inputCls = "w-full rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
@@ -70,49 +110,24 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
       <div className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-paper px-5 pb-6 pt-3 shadow-xl sm:rounded-2xl dark:bg-paper-dark">
         <div className="mx-auto mb-4 h-0.5 w-10 rounded-full bg-border dark:bg-border-dark sm:hidden" />
-
-        <h2 className="mb-1 text-lg font-bold text-ink dark:text-gray-100">
-          {isEditing ? 'Edit Workout' : 'New Workout'}
-        </h2>
-        <p className="mb-4 text-sm text-muted">
-          Build a routine with multiple exercises
-        </p>
+        <h2 className="mb-1 text-lg font-bold text-ink dark:text-gray-100">{isEditing ? 'Edit Workout' : 'New Workout'}</h2>
+        <p className="mb-4 text-sm text-muted">Build a routine with multiple exercises</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="workoutName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">
-              Workout Name
-            </label>
-            <input
-              id="workoutName"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Core Workout, Upper Body Push"
-              autoFocus
-              className="w-full rounded-lg border border-border bg-paper px-4 py-3 text-base text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
-            />
+            <label htmlFor="wName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted">Workout Name</label>
+            <input id="wName" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Core Workout" autoFocus className={inputCls} />
           </div>
 
-          {/* Symbol + Category */}
+          {/* Symbol + Category row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Symbol</label>
               <div className="flex flex-wrap gap-1.5">
                 {ICON_OPTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setIcon(s)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-md text-base transition-all ${
-                      icon === s
-                        ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
-                        : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'
-                    }`}
-                  >
-                    {s}
-                  </button>
+                  <button key={s} type="button" onClick={() => setIcon(s)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-md text-base transition-all ${icon === s ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'}`}>{s}</button>
                 ))}
               </div>
             </div>
@@ -120,18 +135,8 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Category</label>
               <div className="flex flex-wrap gap-1.5">
                 {WORKOUT_TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                      type === t
-                        ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
-                        : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'
-                    }`}
-                  >
-                    {t}
-                  </button>
+                  <button key={t} type="button" onClick={() => setType(t)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${type === t ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'}`}>{t}</button>
                 ))}
               </div>
             </div>
@@ -139,82 +144,106 @@ export function WorkoutFormModal({ open, onClose, onSave, workout }: WorkoutForm
 
           {/* Exercises */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">
-              Exercises ({validExercises.length})
-            </label>
-
-            <div className="space-y-2.5">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Exercises ({validExercises.length})</label>
+            <div className="space-y-2">
               {exercises.map((ex, i) => (
                 <div key={i} className="rounded-lg border border-border bg-background p-3 dark:border-border-dark dark:bg-background-dark">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-bold text-muted">
-                      {i + 1}.
-                    </span>
-                    <input
-                      type="text"
-                      value={ex.name}
-                      onChange={(e) => updateExercise(i, 'name', e.target.value)}
-                      placeholder="Exercise name"
-                      className="flex-1 rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
-                    />
+                    <span className="text-[11px] text-muted">{i + 1}.</span>
+                    <input type="text" value={ex.name} onChange={(e) => updateExercise(i, 'name', e.target.value)} placeholder="Exercise name" className={`flex-1 ${inputCls}`} />
                     {exercises.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeExercise(i)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs text-muted hover:text-red-500"
-                      >
-                        ×
-                      </button>
+                      <button type="button" onClick={() => setExercises((p) => p.filter((_, idx) => idx !== i))}
+                        className="text-xs text-muted hover:text-red-500">×</button>
                     )}
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted">Sets</label>
-                      <input type="number" min={1} value={ex.sets}
-                        onChange={(e) => updateExercise(i, 'sets', parseInt(e.target.value) || 1)}
-                        className="w-full rounded-md border border-border bg-paper px-2 py-1.5 text-center text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Sets</label>
+                      <input type="number" min={1} value={ex.sets} onChange={(e) => updateExercise(i, 'sets', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
                     </div>
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted">Reps</label>
-                      <input type="number" min={1} value={ex.reps}
-                        onChange={(e) => updateExercise(i, 'reps', parseInt(e.target.value) || 1)}
-                        className="w-full rounded-md border border-border bg-paper px-2 py-1.5 text-center text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Reps</label>
+                      <input type="number" min={1} value={ex.reps} onChange={(e) => updateExercise(i, 'reps', parseInt(e.target.value) || 1)} className={inputCls + ' text-center'} />
                     </div>
                     <div>
-                      <label className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wider text-muted">Weight</label>
+                      <label className="mb-0.5 block text-[9px] font-semibold uppercase text-muted">Weight</label>
                       <div className="flex">
                         <input type="number" min={0} step={0.5} value={ex.weight ?? ''} placeholder="—"
                           onChange={(e) => updateExercise(i, 'weight', parseFloat(e.target.value) || 0)}
-                          className="w-full rounded-l-md border border-r-0 border-border bg-paper px-2 py-1.5 text-center text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
-                        <button type="button"
-                          onClick={() => updateExercise(i, 'unit', ex.unit === 'kg' ? 'lbs' : 'kg')}
-                          className="rounded-r-md border border-border bg-background px-2 py-1.5 text-[10px] font-bold text-muted dark:border-border-dark dark:bg-background-dark">
-                          {ex.unit || 'kg'}
-                        </button>
+                          className={inputCls + ' rounded-r-none border-r-0 text-center'} />
+                        <button type="button" onClick={() => updateExercise(i, 'unit', ex.unit === 'kg' ? 'lbs' : 'kg')}
+                          className="rounded-r-md border border-border bg-background px-2 text-[10px] font-bold text-muted dark:border-border-dark dark:bg-background-dark">{ex.unit || 'kg'}</button>
                       </div>
                     </div>
                   </div>
-                  <input type="text" value={ex.notes ?? ''}
-                    onChange={(e) => updateExercise(i, 'notes', e.target.value)}
-                    placeholder="Notes (optional)"
-                    className="mt-2 w-full rounded-md border border-border bg-paper px-3 py-1.5 text-xs text-ink-light outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-400" />
                 </div>
               ))}
             </div>
-
-            <button type="button"
-              onClick={() => setExercises((prev) => [...prev, emptyExercise()])}
-              className="mt-2.5 w-full rounded-lg border border-dashed border-border py-3 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent dark:border-border-dark">
+            <button type="button" onClick={() => setExercises((p) => [...p, emptyExercise()])}
+              className="mt-2 w-full rounded-lg border border-dashed border-border py-2.5 text-sm font-medium text-muted hover:border-accent hover:text-accent dark:border-border-dark">
               + Add Exercise
             </button>
+          </div>
+
+          {/* Schedule */}
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Schedule</label>
+            <div className="mb-3 flex rounded-md border border-border p-0.5 dark:border-border-dark">
+              <button type="button" onClick={() => setScheduleMode('specific')}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${scheduleMode === 'specific' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'}`}>Specific days</button>
+              <button type="button" onClick={() => setScheduleMode('flexible')}
+                className={`flex-1 rounded-[4px] py-1.5 text-xs font-medium transition-all ${scheduleMode === 'flexible' ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'text-muted'}`}>Times per week</button>
+            </div>
+            {scheduleMode === 'specific' ? (
+              <div className="flex justify-between gap-1">
+                {DAY_LABELS.map((label, i) => (
+                  <button key={i} type="button" onClick={() => toggleDay(i)}
+                    className={`flex h-10 flex-1 items-center justify-center rounded-md text-sm font-semibold transition-all ${
+                      selectedDays.has(i) ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-muted dark:bg-background-dark'
+                    }`}>{label}</button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {FLEX_FREQ.map((opt) => (
+                  <button key={opt.value} type="button" onClick={() => setFlexFrequency(opt.value)}
+                    className={`rounded-md px-3.5 py-2 text-sm font-medium transition-all ${
+                      flexFrequency === opt.value ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900' : 'bg-background text-ink-light dark:bg-background-dark dark:text-gray-400'
+                    }`}>{opt.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Period */}
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted">Period</label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="w-12 text-xs text-muted">From</span>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                  className={`flex-1 ${inputCls} dark:color-scheme-dark`} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 text-xs text-muted">Until</span>
+                {hasEndDate ? (
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate}
+                    className={`flex-1 ${inputCls} dark:color-scheme-dark`} />
+                ) : (
+                  <span className="flex-1 text-sm text-muted">Ongoing</span>
+                )}
+                <button type="button" onClick={() => setHasEndDate((v) => !v)}
+                  className="text-xs text-accent underline underline-offset-2">
+                  {hasEndDate ? 'Make ongoing' : 'Set end date'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 rounded-lg border border-border py-3 text-sm font-medium text-ink-light hover:bg-background dark:border-border-dark dark:text-gray-400">
-              Cancel
-            </button>
+              className="flex-1 rounded-lg border border-border py-3 text-sm font-medium text-ink-light dark:border-border-dark dark:text-gray-400">Cancel</button>
             <button type="submit" disabled={!canSave}
               className="flex-1 rounded-lg bg-ink py-3 text-sm font-semibold text-paper hover:bg-primary-dark active:scale-[0.98] disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900">
               {isEditing ? 'Save' : 'Create'}

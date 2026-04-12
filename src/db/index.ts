@@ -15,6 +15,10 @@ export interface Habit {
   frequencyPerWeek: number
   /** Specific days of the week: 0=Sun, 1=Mon, ..., 6=Sat. Empty = flexible. */
   scheduledDays?: number[]
+  /** When this habit starts being active (defaults to createdAt if unset) */
+  startDate?: Date
+  /** When this habit ends (undefined = ongoing forever) */
+  endDate?: Date
   createdAt: Date
   archivedAt?: Date
 }
@@ -41,6 +45,14 @@ export interface Workout {
   emoji: string
   type: string            // "Strength", "Cardio", "Flexibility", etc.
   exercises: Exercise[]
+  /** Specific days: 0=Sun..6=Sat. Empty = flexible / every day. */
+  scheduledDays?: number[]
+  /** Times per week when using flexible scheduling */
+  frequencyPerWeek?: number
+  /** When this workout starts being active */
+  startDate?: Date
+  /** When this workout ends (undefined = ongoing) */
+  endDate?: Date
   createdAt: Date
   archivedAt?: Date
 }

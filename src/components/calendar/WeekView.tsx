@@ -1,6 +1,7 @@
 import type { CalendarData } from '../../hooks/useCalendarData'
 import type { Habit } from '../../db/index'
 import { getWeekDays, toDateKey, isToday, DAY_NAMES_SHORT } from '../../lib/dates'
+import { isScheduledForDate } from '../../lib/schedule'
 
 interface WeekViewProps {
   date: Date
@@ -31,8 +32,12 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
         const key = toDateKey(day)
         const today = isToday(day)
         const completions = data.completions.get(key) || []
+        const workoutLogs = data.workoutLogs.get(key) || []
         const activities = data.activities.get(key) || []
-        const uniqueHabitIds = [...new Set(completions.map((c) => c.habitId))]
+        const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, day))
+        const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, day))
+        const completedHabitIds = new Set(completions.map((c) => c.habitId))
+        const loggedWorkoutIds = new Set(workoutLogs.map((l) => l.workoutId))
         const isLast = i === days.length - 1
 
         return (
@@ -62,17 +67,18 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
             {/* Divider */}
             <div className="w-px self-stretch bg-border dark:bg-border-dark" />
 
-            {/* Right: habits + activities */}
+            {/* Right: habits + workouts + activities */}
             <div className="min-w-0 flex-1 pt-0.5">
-              {uniqueHabitIds.length > 0 && (
+              {/* Scheduled habits */}
+              {scheduledHabits.length > 0 && (
                 <div className="space-y-0.5">
-                  {uniqueHabitIds.map((hid) => {
-                    const habit = habitMap.get(hid)
+                  {scheduledHabits.map((habit) => {
+                    const done = habit.id != null && completedHabitIds.has(habit.id)
                     return (
-                      <div key={hid} className="flex items-center gap-1.5 truncate">
-                        <span className="text-xs text-ink dark:text-gray-400">{habit?.emoji || '·'}</span>
-                        <span className="truncate text-xs text-ink-light dark:text-gray-400">
-                          {habit?.name || 'Habit'}
+                      <div key={habit.id} className="flex items-center gap-1.5 truncate">
+                        <span className={`text-xs ${done ? 'text-accent' : 'text-ink dark:text-gray-400'}`}>{habit.emoji}</span>
+                        <span className={`truncate text-xs ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                          {habit.name}
                         </span>
                       </div>
                     )
@@ -80,8 +86,26 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                 </div>
               )}
 
+              {/* Scheduled workouts */}
+              {scheduledWorkouts.length > 0 && (
+                <div className={scheduledHabits.length > 0 ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
+                  {scheduledWorkouts.map((w) => {
+                    const done = w.id != null && loggedWorkoutIds.has(w.id)
+                    return (
+                      <div key={w.id} className="flex items-center gap-1.5 truncate">
+                        <span className={`text-xs ${done ? 'text-accent' : 'text-ink dark:text-gray-400'}`}>{w.emoji}</span>
+                        <span className={`truncate text-xs ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                          {w.name}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Activities */}
               {activities.length > 0 && (
-                <div className={uniqueHabitIds.length > 0 ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
+                <div className={(scheduledHabits.length > 0 || scheduledWorkouts.length > 0) ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
                   {activities.map((a) => (
                     <div key={a.stravaId} className="flex items-baseline gap-2 text-xs text-muted">
                       <span className="font-medium text-ink-light dark:text-gray-400">{a.type}</span>
@@ -92,7 +116,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                 </div>
               )}
 
-              {uniqueHabitIds.length === 0 && activities.length === 0 && (
+              {scheduledHabits.length === 0 && scheduledWorkouts.length === 0 && activities.length === 0 && (
                 <p className="text-xs text-muted">—</p>
               )}
             </div>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Habit, Workout, Exercise } from '../db/index'
+import type { Habit, Workout } from '../db/index'
 import { getAllHabits, createHabit, updateHabit, archiveHabit, unarchiveHabit, deleteHabit } from '../db/habits'
 import { getAllWorkouts, createWorkout, updateWorkout, archiveWorkout, unarchiveWorkout, deleteWorkout } from '../db/workouts'
-import { HabitFormModal } from '../components/HabitFormModal'
-import { WorkoutFormModal } from '../components/WorkoutFormModal'
+import { HabitFormModal, type HabitFormData } from '../components/HabitFormModal'
+import { WorkoutFormModal, type WorkoutFormData } from '../components/WorkoutFormModal'
+import { formatSchedule } from '../lib/schedule'
 
 type CreateType = 'habit' | 'workout'
 
@@ -42,13 +43,13 @@ export function HabitsPage() {
     if (t === 'workout') { setEditingWorkout(undefined); setWorkoutModalOpen(true) }
   }
 
-  const handleSaveHabit = async (data: { name: string; emoji: string; frequencyPerWeek: number; scheduledDays?: number[] }) => {
+  const handleSaveHabit = async (data: HabitFormData) => {
     if (editingHabit?.id != null) await updateHabit(editingHabit.id, data)
     else await createHabit(data)
     setHabitModalOpen(false); setEditingHabit(undefined); await refresh()
   }
 
-  const handleSaveWorkout = async (data: { name: string; emoji: string; type: string; exercises: Exercise[] }) => {
+  const handleSaveWorkout = async (data: WorkoutFormData) => {
     if (editingWorkout?.id != null) await updateWorkout(editingWorkout.id, data)
     else await createWorkout(data)
     setWorkoutModalOpen(false); setEditingWorkout(undefined); await refresh()
@@ -71,14 +72,7 @@ export function HabitsPage() {
     setConfirmDelete(null); await refresh()
   }
 
-  const frequencyLabel = (h: Habit) => {
-    const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    if (h.scheduledDays && h.scheduledDays.length > 0) {
-      if (h.scheduledDays.length === 7) return 'Every day'
-      return h.scheduledDays.map((d) => DAY_NAMES[d]).join(', ')
-    }
-    return h.frequencyPerWeek === 7 ? 'Daily' : `${h.frequencyPerWeek}× / week`
-  }
+  const habitLabel = (h: Habit) => formatSchedule(h)
   const isEmpty = activeHabits.length === 0 && activeWorkouts.length === 0
 
   if (loading) {
@@ -112,7 +106,7 @@ export function HabitsPage() {
           <ul className="space-y-1.5">
             {activeHabits.map((h) => (
               <ItemCard key={`h-${h.id}`} symbol={h.emoji} name={h.name}
-                subtitle={frequencyLabel(h)}
+                subtitle={habitLabel(h)}
                 onEdit={() => { setEditingHabit(h); setHabitModalOpen(true) }}
                 onArchive={() => handleArchive('habit', h.id!)}
                 onDelete={() => setConfirmDelete({ type: 'habit', id: h.id! })} />
@@ -274,7 +268,7 @@ function WorkoutCard({ workout, onEdit, onArchive, onDelete }: {
             <p className="text-sm font-medium text-ink dark:text-gray-100">{workout.name}</p>
             <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted dark:border-border-dark">{workout.type}</span>
           </div>
-          <p className="text-[11px] text-muted">{workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}</p>
+          <p className="text-[11px] text-muted">{formatSchedule(workout)}{workout.exercises.length > 0 ? ` · ${workout.exercises.length} ex.` : ''}</p>
         </div>
         <svg className={`h-3.5 w-3.5 text-muted transition-transform ${expanded ? 'rotate-90' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

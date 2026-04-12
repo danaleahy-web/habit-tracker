@@ -3,6 +3,7 @@ import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleWorkoutLog } from '../../db/workouts'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
+import { isScheduledForDate } from '../../lib/schedule'
 
 interface DayViewProps {
   date: Date
@@ -38,6 +39,10 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const completedHabitIds = new Set(completions.map((c) => c.habitId))
   const loggedWorkoutIds = new Set(workoutLogs.map((l) => l.workoutId))
 
+  // Filter to only items scheduled for this day
+  const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, date))
+  const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, date))
+
   const [pendingHabitToggles, setPendingHabitToggles] = useState<Set<number>>(new Set())
   const [pendingWorkoutToggles, setPendingWorkoutToggles] = useState<Set<number>>(new Set())
   const [expandedWorkout, setExpandedWorkout] = useState<number | null>(null)
@@ -68,9 +73,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     return pendingWorkoutToggles.has(workoutId) ? !dbState : dbState
   }
 
-  const completedHabitCount = data.habits.filter((h) => h.id != null && isHabitDone(h.id!)).length
-  const completedWorkoutCount = data.workouts.filter((w) => w.id != null && isWorkoutDone(w.id!)).length
-  const totalItems = data.habits.length + data.workouts.length
+  const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
+  const completedWorkoutCount = scheduledWorkouts.filter((w) => w.id != null && isWorkoutDone(w.id!)).length
+  const totalItems = scheduledHabits.length + scheduledWorkouts.length
   const totalCompleted = completedHabitCount + completedWorkoutCount
 
   return (
@@ -87,13 +92,13 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
       <div className="flex-1 overflow-y-auto">
         {/* Habits */}
-        {data.habits.length > 0 && (
+        {scheduledHabits.length > 0 && (
           <div className="border-b border-border dark:border-border-dark">
             <h3 className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
               Habits
             </h3>
             <ul>
-              {data.habits.map((habit) => {
+              {scheduledHabits.map((habit) => {
                 const done = habit.id != null && isHabitDone(habit.id)
                 const toggling = habit.id != null && pendingHabitToggles.has(habit.id)
                 return (
@@ -127,13 +132,13 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         )}
 
         {/* Workouts */}
-        {data.workouts.length > 0 && (
+        {scheduledWorkouts.length > 0 && (
           <div className="border-b border-border dark:border-border-dark">
             <h3 className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
               Workouts
             </h3>
             <ul>
-              {data.workouts.map((workout) => {
+              {scheduledWorkouts.map((workout) => {
                 const done = workout.id != null && isWorkoutDone(workout.id)
                 const toggling = workout.id != null && pendingWorkoutToggles.has(workout.id)
                 const isExpanded = expandedWorkout === workout.id
@@ -218,7 +223,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         )}
 
         {/* Empty state */}
-        {data.habits.length === 0 && data.workouts.length === 0 && (
+        {scheduledHabits.length === 0 && scheduledWorkouts.length === 0 && (
           <div className="border-b border-border px-4 py-6 text-center dark:border-border-dark">
             <p className="text-sm text-muted">No habits or workouts yet.</p>
             <p className="mt-1 text-xs text-muted">Head to the Plan tab to add some.</p>
