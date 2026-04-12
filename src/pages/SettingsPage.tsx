@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
+import { getSetting, setSetting } from '../db/settings'
 import {
   startOAuth, exchangeToken, isStravaConnected, getAthleteName,
   disconnectStrava, syncActivities, getLastSyncTime, getLocalActivityCount,
   type SyncResult,
 } from '../services/strava'
 
-type ConnectionStatus = 'loading' | 'disconnected' | 'connected'
+type StravaState = 'loading' | 'no-credentials' | 'has-credentials' | 'connected'
 
 export function SettingsPage() {
-  const [stravaStatus, setStravaStatus] = useState<ConnectionStatus>('loading')
+  const [stravaState, setStravaState] = useState<StravaState>('loading')
   const [athleteName, setAthleteName] = useState('')
   const [lastSync, setLastSync] = useState<string | undefined>()
   const [activityCount, setActivityCount] = useState(0)
@@ -17,19 +18,31 @@ export function SettingsPage() {
   const [error, setError] = useState('')
   const [oauthProcessing, setOauthProcessing] = useState(false)
 
-  const loadStravaStatus = useCallback(async () => {
+  // Credential form
+  const [clientId, setClientId] = useState('')
+  const [clientSecret, setClientSecret] = useState('')
+  const [savingCreds, setSavingCreds] = useState(false)
+
+  const loadStravaState = useCallback(async () => {
     const connected = await isStravaConnected()
     if (connected) {
-      setStravaStatus('connected')
+      setStravaState('connected')
       setAthleteName((await getAthleteName()) || 'Athlete')
       setLastSync(await getLastSyncTime())
       setActivityCount(await getLocalActivityCount())
+      return
+    }
+
+    const cid = await getSetting('strava_client_id')
+    const csec = await getSetting('strava_client_secret')
+    if (cid && csec) {
+      setStravaState('has-credentials')
     } else {
-      setStravaStatus('disconnected')
+      setStravaState('no-credentials')
     }
   }, [])
 
-  // Handle OAuth redirect — check for ?code= in the URL
+  // Handle OAuth redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
@@ -38,7 +51,7 @@ export function SettingsPage() {
     if (oauthError) {
       setError(`Authorization denied: ${oauthError}`)
       window.history.replaceState({}, '', window.location.pathname)
-      loadStravaStatus()
+      loadStravaState()
       return
     }
 
@@ -48,21 +61,42 @@ export function SettingsPage() {
       exchangeToken(code)
         .then(async () => {
           setOauthProcessing(false)
-          await loadStravaStatus()
+          await loadStravaState()
           setSyncing(true)
           try { setSyncResult(await syncActivities()) }
           catch (err) { setError(err instanceof Error ? err.message : 'Sync failed') }
-          finally { setSyncing(false); await loadStravaStatus() }
+          finally { setSyncing(false); await loadStravaState() }
         })
         .catch((err) => {
           setOauthProcessing(false)
           setError(err instanceof Error ? err.message : 'OAuth failed')
-          loadStravaStatus()
+          loadStravaState()
         })
     } else {
-      loadStravaStatus()
+      loadStravaState()
     }
-  }, [loadStravaStatus])
+  }, [loadStravaState])
+
+  const handleSaveCredentials = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimId = clientId.trim()
+    const trimSecret = clientSecret.trim()
+    if (!trimId || !trimSecret) { setError('Both fields are required.'); return }
+
+    setSavingCreds(true)
+    setError('')
+    try {
+      await setSetting('strava_client_id', trimId)
+      await setSetting('strava_client_secret', trimSecret)
+      setStravaState('has-credentials')
+      setClientId('')
+      setClientSecret('')
+    } catch {
+      setError('Failed to save credentials.')
+    } finally {
+      setSavingCreds(false)
+    }
+  }
 
   const handleConnect = async () => {
     setError('')
@@ -72,14 +106,25 @@ export function SettingsPage() {
 
   const handleSync = async () => {
     setError(''); setSyncResult(null); setSyncing(true)
-    try { setSyncResult(await syncActivities()); await loadStravaStatus() }
+    try { setSyncResult(await syncActivities()); await loadStravaState() }
     catch (err) { setError(err instanceof Error ? err.message : 'Sync failed') }
     finally { setSyncing(false) }
   }
 
   const handleDisconnect = async () => {
     await disconnectStrava()
-    setStravaStatus('disconnected'); setAthleteName(''); setLastSync(undefined); setSyncResult(null)
+    setStravaState('has-credentials')
+    setAthleteName(''); setLastSync(undefined); setSyncResult(null)
+  }
+
+  const handleResetCredentials = async () => {
+    await disconnectStrava()
+    // Also clear client ID/secret
+    const { deleteSetting } = await import('../db/settings')
+    await deleteSetting('strava_client_id')
+    await deleteSetting('strava_client_secret')
+    setStravaState('no-credentials')
+    setAthleteName(''); setLastSync(undefined); setSyncResult(null)
   }
 
   const fmtSync = (iso: string) => {
@@ -100,7 +145,6 @@ export function SettingsPage() {
       <div className="mt-5">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Strava</h2>
 
-        {/* Error */}
         {error && (
           <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-900/20">
             <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
@@ -108,26 +152,60 @@ export function SettingsPage() {
           </div>
         )}
 
-        {(stravaStatus === 'loading' || oauthProcessing) ? (
+        {(stravaState === 'loading' || oauthProcessing) ? (
           <p className="py-4 text-center text-sm text-muted">
             {oauthProcessing ? 'Connecting to Strava…' : 'Loading…'}
           </p>
-        ) : stravaStatus === 'disconnected' ? (
-          /* Disconnected */
+
+        ) : stravaState === 'no-credentials' ? (
+          /* Step 1: Enter API credentials */
           <div>
             <p className="text-sm text-ink-light dark:text-gray-400">
-              Link your Strava account to import activities into your journal.
+              Enter your Strava API credentials to get started. Find them at{' '}
+              <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener noreferrer"
+                className="text-accent underline underline-offset-2">strava.com/settings/api</a>
+            </p>
+            <form onSubmit={handleSaveCredentials} className="mt-3 space-y-3">
+              <div>
+                <label htmlFor="clientId" className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted">
+                  Client ID
+                </label>
+                <input id="clientId" type="text" inputMode="numeric" autoComplete="off"
+                  value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="12345"
+                  className="w-full rounded-lg border border-border bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+              </div>
+              <div>
+                <label htmlFor="clientSecret" className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted">
+                  Client Secret
+                </label>
+                <input id="clientSecret" type="password" autoComplete="off"
+                  value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="••••••••••"
+                  className="w-full rounded-lg border border-border bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+              </div>
+              <button type="submit" disabled={savingCreds}
+                className="w-full rounded-lg bg-ink py-2.5 text-sm font-semibold uppercase tracking-wider text-paper transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-50 dark:bg-gray-200 dark:text-gray-900">
+                {savingCreds ? 'Saving…' : 'Save Credentials'}
+              </button>
+            </form>
+            <p className="mt-2 text-[11px] text-muted">Stored locally on your device only.</p>
+          </div>
+
+        ) : stravaState === 'has-credentials' ? (
+          /* Step 2: Credentials saved, connect OAuth */
+          <div>
+            <p className="text-sm text-ink-light dark:text-gray-400">
+              Credentials saved. Connect your Strava account to start syncing.
             </p>
             <button onClick={handleConnect}
-              className="mt-3 w-full rounded-lg bg-ink py-3 text-sm font-semibold uppercase tracking-wider text-paper transition-all hover:bg-primary-dark active:scale-[0.98] dark:bg-gray-200 dark:text-gray-900">
+              className="mt-3 w-full rounded-lg bg-ink py-2.5 text-sm font-semibold uppercase tracking-wider text-paper transition-all hover:bg-primary-dark active:scale-[0.98] dark:bg-gray-200 dark:text-gray-900">
               Connect with Strava
             </button>
             <p className="mt-2 text-[11px] text-muted">Uses OAuth2 — your password is never shared.</p>
           </div>
+
         ) : (
           /* Connected */
           <div className="space-y-3">
-            {/* Status row */}
             <div className="flex items-center justify-between border-b border-border pb-3 dark:border-border-dark">
               <div>
                 <p className="text-sm font-medium text-ink dark:text-gray-100">{athleteName}</p>
@@ -139,7 +217,6 @@ export function SettingsPage() {
               </button>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border bg-paper px-4 py-3 dark:border-border-dark dark:bg-paper-dark">
                 <p className="text-xl font-bold text-ink dark:text-gray-100">{activityCount}</p>
@@ -151,13 +228,11 @@ export function SettingsPage() {
               </div>
             </div>
 
-            {/* Sync button */}
             <button onClick={handleSync} disabled={syncing}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink py-3 text-sm font-semibold uppercase tracking-wider text-paper transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-60 dark:bg-gray-200 dark:text-gray-900">
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-ink py-2.5 text-sm font-semibold uppercase tracking-wider text-paper transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-60 dark:bg-gray-200 dark:text-gray-900">
               {syncing ? 'Syncing…' : 'Sync Now'}
             </button>
 
-            {/* Result */}
             {syncResult && !syncing && (
               <div className="rounded-lg border border-border bg-paper px-4 py-3 dark:border-border-dark dark:bg-paper-dark">
                 <p className="text-sm font-semibold text-ink dark:text-gray-100">Sync complete</p>
@@ -182,19 +257,23 @@ export function SettingsPage() {
       {/* ===== Danger Zone ===== */}
       <div className="mt-5">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted">Danger Zone</h2>
-        <SettingsButton label="Reset Strava Credentials" desc="Remove saved API keys and re-enter them" danger />
+        <button onClick={handleResetCredentials}
+          className="flex w-full items-start gap-4 border-b border-border px-1 py-4 text-left transition-colors hover:bg-background dark:border-border-dark dark:hover:bg-background-dark">
+          <div>
+            <p className="text-sm font-medium text-red-600 dark:text-red-400">Reset Strava Credentials</p>
+            <p className="mt-0.5 text-xs text-muted">Remove saved API keys and disconnect</p>
+          </div>
+        </button>
       </div>
     </div>
   )
 }
 
-function SettingsButton({ label, desc, danger }: { label: string; desc: string; danger?: boolean }) {
+function SettingsButton({ label, desc }: { label: string; desc: string }) {
   return (
     <button className="flex w-full items-start gap-4 border-b border-border px-1 py-4 text-left transition-colors last:border-0 hover:bg-background dark:border-border-dark dark:hover:bg-background-dark">
       <div>
-        <p className={`text-sm font-medium ${danger ? 'text-red-600 dark:text-red-400' : 'text-ink dark:text-gray-100'}`}>
-          {label}
-        </p>
+        <p className="text-sm font-medium text-ink dark:text-gray-100">{label}</p>
         <p className="mt-0.5 text-xs text-muted">{desc}</p>
       </div>
     </button>
