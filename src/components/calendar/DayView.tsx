@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
-import { toggleExerciseInLog } from '../../db/workouts'
-import { addNote, updateNote, deleteNote } from '../../db/notes'
+import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
+import type { Exercise } from '../../db/index'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
 import { isScheduledForDate } from '../../lib/schedule'
 import { ActivityCard } from '../ActivityCard'
@@ -19,7 +19,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const completions = data.completions.get(key) || []
   const workoutLogs = data.workoutLogs.get(key) || []
   const activities = data.activities.get(key) || []
-  const dayNotes = data.notes.get(key) || []
   const completedHabitIds = new Set(completions.map((c) => c.habitId))
 
   // Filter to only items scheduled for this day
@@ -28,9 +27,10 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
   const [pendingHabitToggles, setPendingHabitToggles] = useState<Set<number>>(new Set())
   const [expandedWorkout, setExpandedWorkout] = useState<number | null>(null)
-  const [showNoteInput, setShowNoteInput] = useState(false)
-  const [noteText, setNoteText] = useState('')
-  const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
+  const [addingExtraFor, setAddingExtraFor] = useState<number | null>(null)
+  const [extraName, setExtraName] = useState('')
+  const [extraSets, setExtraSets] = useState(3)
+  const [extraReps, setExtraReps] = useState(10)
 
   // Habit toggle
   const handleHabitToggle = async (habitId: number) => {
@@ -57,6 +57,34 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
     return new Set(log?.completedExercises || [])
   }
 
+  // Get extra exercises and their completion state
+  const getExtras = (workoutId: number) => {
+    const log = workoutLogs.find((l) => l.workoutId === workoutId)
+    return {
+      exercises: log?.extraExercises || [],
+      completed: new Set(log?.completedExtras || []),
+    }
+  }
+
+  const handleAddExtra = async (workoutId: number) => {
+    if (!extraName.trim()) return
+    const ex: Exercise = { name: extraName.trim(), sets: extraSets, reps: extraReps }
+    await addExtraExercise(workoutId, date, ex)
+    setAddingExtraFor(null)
+    setExtraName(''); setExtraSets(3); setExtraReps(10)
+    onDataChange?.()
+  }
+
+  const handleToggleExtra = async (workoutId: number, extraIndex: number) => {
+    await toggleExtraExercise(workoutId, date, extraIndex)
+    onDataChange?.()
+  }
+
+  const handleRemoveExtra = async (workoutId: number, extraIndex: number) => {
+    await removeExtraExercise(workoutId, date, extraIndex)
+    onDataChange?.()
+  }
+
   // Individual exercise toggle — optimistic local update, DB write in background
   const handleExerciseToggle = async (workoutId: number, exerciseIndex: number, totalExercises: number) => {
     const key = `${workoutId}`
@@ -73,9 +101,14 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
   const completedHabitCount = scheduledHabits.filter((h) => h.id != null && isHabitDone(h.id!)).length
   const completedWorkoutCount = scheduledWorkouts.filter((w) => {
-    if (w.id == null || w.exercises.length === 0) return false
+    if (w.id == null) return false
     const completed = getCompletedExercises(w.id)
-    return w.exercises.every((_, i) => completed.has(i))
+    const extras = getExtras(w.id)
+    const totalEx = w.exercises.length + extras.exercises.length
+    if (totalEx === 0) return false
+    const doneCount = w.exercises.filter((_, i) => completed.has(i)).length +
+      extras.exercises.filter((_, i) => extras.completed.has(i)).length
+    return doneCount === totalEx
   }).length
   const totalItems = scheduledHabits.length + scheduledWorkouts.length
   const totalCompleted = completedHabitCount + completedWorkoutCount
@@ -144,65 +177,88 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 const wid = workout.id!
                 const isExpanded = expandedWorkout === wid
                 const completedExercises = getCompletedExercises(wid)
-                const exDoneCount = workout.exercises.filter((_, i) => completedExercises.has(i)).length
-                const allDone = workout.exercises.length > 0 && exDoneCount === workout.exercises.length
+                const extras = getExtras(wid)
+                const totalEx = workout.exercises.length + extras.exercises.length
+                const doneCount = workout.exercises.filter((_, i) => completedExercises.has(i)).length +
+                  extras.exercises.filter((_, i) => extras.completed.has(i)).length
+                const allDone = totalEx > 0 && doneCount === totalEx
 
                 return (
                   <li key={wid} className="border-t border-border dark:border-border-dark">
-                    {/* Workout header row */}
-                    <button
-                      onClick={() => setExpandedWorkout(isExpanded ? null : wid)}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left"
-                    >
+                    {/* Workout header */}
+                    <button onClick={() => setExpandedWorkout(isExpanded ? null : wid)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left">
                       <span className="text-sm text-ink-light dark:text-gray-400">{workout.emoji}</span>
-                      <span className={`flex-1 text-sm transition-colors ${
-                        allDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
-                      }`}>
+                      <span className={`flex-1 text-sm transition-colors ${allDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'}`}>
                         {workout.name}
                       </span>
-                      <span className="text-[10px] text-muted">
-                        {exDoneCount}/{workout.exercises.length}
-                      </span>
+                      <span className="text-[10px] text-muted">{doneCount}/{totalEx}</span>
                       <svg className={`h-3 w-3 shrink-0 text-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
 
-                    {/* Exercises with individual checkboxes */}
+                    {/* Exercises */}
                     {isExpanded && (
                       <div className="border-t border-border bg-background dark:border-border-dark dark:bg-background-dark">
+                        {/* Template exercises */}
                         <ul>
                           {workout.exercises.map((ex, i) => {
                             const exDone = completedExercises.has(i)
                             return (
-                              <li key={i} className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-0 dark:border-border-dark">
-                                <button
-                                  onClick={() => handleExerciseToggle(wid, i, workout.exercises.length)}
-                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90 ${
-                                    exDone
-                                      ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
-                                      : 'border-border hover:border-ink-light dark:border-border-dark'
-                                  }`}
-                                >
-                                  {exDone && (
-                                    <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                  )}
-                                </button>
-                                <span className={`flex-1 text-xs transition-colors ${
-                                  exDone ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'
-                                }`}>
-                                  {ex.name}
-                                </span>
-                                <span className={`text-[10px] ${exDone ? 'text-muted/50' : 'text-muted'}`}>
-                                  {ex.sets}×{ex.reps}{ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}
-                                </span>
-                              </li>
+                              <ExerciseRow key={`t-${i}`} name={ex.name}
+                                detail={`${ex.sets}×${ex.reps}${ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}`}
+                                done={exDone}
+                                onToggle={() => handleExerciseToggle(wid, i, workout.exercises.length)} />
                             )
                           })}
                         </ul>
+
+                        {/* Extra exercises (day-specific) */}
+                        {extras.exercises.length > 0 && (
+                          <div className="border-t border-border dark:border-border-dark">
+                            <p className="px-4 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-widest text-muted">Today only</p>
+                            <ul>
+                              {extras.exercises.map((ex, i) => (
+                                <ExerciseRow key={`e-${i}`} name={ex.name}
+                                  detail={`${ex.sets}×${ex.reps}${ex.weight ? ` · ${ex.weight}${ex.unit || 'kg'}` : ''}`}
+                                  done={extras.completed.has(i)}
+                                  onToggle={() => handleToggleExtra(wid, i)}
+                                  onRemove={() => handleRemoveExtra(wid, i)} />
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Add extra exercise */}
+                        {addingExtraFor === wid ? (
+                          <div className="border-t border-border px-4 py-2.5 dark:border-border-dark">
+                            <div className="flex gap-2">
+                              <input type="text" value={extraName} onChange={(e) => setExtraName(e.target.value)}
+                                placeholder="Exercise name" autoFocus
+                                className="flex-1 rounded-md border border-border bg-paper px-2 py-1.5 text-xs text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+                              <input type="number" min={1} value={extraSets} onChange={(e) => setExtraSets(parseInt(e.target.value) || 1)}
+                                className="w-12 rounded-md border border-border bg-paper px-1 py-1.5 text-center text-xs text-ink outline-none dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
+                                placeholder="Sets" />
+                              <input type="number" min={1} value={extraReps} onChange={(e) => setExtraReps(parseInt(e.target.value) || 1)}
+                                className="w-12 rounded-md border border-border bg-paper px-1 py-1.5 text-center text-xs text-ink outline-none dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
+                                placeholder="Reps" />
+                            </div>
+                            <div className="mt-2 flex gap-2">
+                              <button onClick={() => handleAddExtra(wid)} disabled={!extraName.trim()}
+                                className="rounded-md bg-ink px-3 py-1.5 text-[10px] font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900">
+                                Add
+                              </button>
+                              <button onClick={() => setAddingExtraFor(null)} className="text-[10px] text-muted">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => { setAddingExtraFor(wid); setExtraName(''); setExtraSets(3); setExtraReps(10) }}
+                            className="w-full border-t border-border px-4 py-2 text-left text-[10px] text-accent underline-offset-2 hover:underline dark:border-border-dark">
+                            + Add exercise for today
+                          </button>
+                        )}
                       </div>
                     )}
                   </li>
@@ -256,105 +312,37 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
           )}
         </div>
 
-        {/* Notes */}
-        <div className="border-t border-border dark:border-border-dark">
-          <div className="flex items-center justify-between px-4 pt-3">
-            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-              Notes
-            </h3>
-            {!showNoteInput && (
-              <button
-                onClick={() => { setShowNoteInput(true); setEditingNoteId(null); setNoteText('') }}
-                className="text-xs text-accent underline underline-offset-2"
-              >
-                + Add
-              </button>
-            )}
-          </div>
-
-          {/* Existing notes */}
-          {dayNotes.length > 0 && (
-            <ul className="mt-1">
-              {dayNotes.map((note) => (
-                <li key={note.id} className="group border-t border-border px-4 py-2.5 dark:border-border-dark">
-                  {editingNoteId === note.id ? (
-                    <div className="space-y-2">
-                      <textarea
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        rows={2}
-                        autoFocus
-                        className="w-full rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={async () => {
-                            if (noteText.trim()) { await updateNote(note.id!, noteText.trim()); onDataChange?.() }
-                            setEditingNoteId(null); setNoteText('')
-                          }}
-                          className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper dark:bg-gray-200 dark:text-gray-900"
-                        >Save</button>
-                        <button onClick={() => { setEditingNoteId(null); setNoteText('') }}
-                          className="text-xs text-muted">Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
-                      <p className="flex-1 whitespace-pre-wrap text-sm text-ink-light dark:text-gray-300">
-                        {note.content}
-                      </p>
-                      <div className="flex shrink-0 gap-2 opacity-0 transition-opacity group-hover:opacity-100"
-                        style={{ opacity: undefined }}>
-                        <button
-                          onClick={() => { setEditingNoteId(note.id!); setNoteText(note.content) }}
-                          className="text-[10px] text-muted underline underline-offset-2"
-                        >Edit</button>
-                        <button
-                          onClick={async () => { await deleteNote(note.id!); onDataChange?.() }}
-                          className="text-[10px] text-red-400 underline underline-offset-2"
-                        >Delete</button>
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* New note input */}
-          {showNoteInput && (
-            <div className="border-t border-border px-4 py-3 dark:border-border-dark">
-              <textarea
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Add a note, reminder, or one-off activity..."
-                rows={2}
-                autoFocus
-                className="w-full rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink placeholder-muted outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100"
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={async () => {
-                    if (noteText.trim()) { await addNote(date, noteText.trim()); onDataChange?.() }
-                    setShowNoteInput(false); setNoteText('')
-                  }}
-                  disabled={!noteText.trim()}
-                  className="rounded-md bg-ink px-4 py-1.5 text-xs font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900"
-                >Save</button>
-                <button onClick={() => { setShowNoteInput(false); setNoteText('') }}
-                  className="text-xs text-muted">Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {dayNotes.length === 0 && !showNoteInput && (
-            <div className="px-4 py-4 text-center">
-              <p className="text-xs text-muted">No notes for this day.</p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
+  )
+}
+
+/** Reusable exercise row with checkbox */
+function ExerciseRow({ name, detail, done, onToggle, onRemove }: {
+  name: string; detail: string; done: boolean
+  onToggle: () => void; onRemove?: () => void
+}) {
+  return (
+    <li className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-0 dark:border-border-dark">
+      <button onClick={onToggle}
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90 ${
+          done
+            ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
+            : 'border-border hover:border-ink-light dark:border-border-dark'
+        }`}>
+        {done && (
+          <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+      <span className={`flex-1 text-xs transition-colors ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'}`}>
+        {name}
+      </span>
+      <span className={`text-[10px] ${done ? 'text-muted/50' : 'text-muted'}`}>{detail}</span>
+      {onRemove && (
+        <button onClick={onRemove} className="text-[10px] text-red-400 hover:text-red-600">×</button>
+      )}
+    </li>
   )
 }

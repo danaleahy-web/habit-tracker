@@ -63,6 +63,10 @@ export interface WorkoutLog {
   completedAt: Date
   /** Indices of individually completed exercises */
   completedExercises?: number[]
+  /** Extra exercises added to this day only (not in the template) */
+  extraExercises?: Exercise[]
+  /** Indices of completed extra exercises */
+  completedExtras?: number[]
   notes?: string
 }
 

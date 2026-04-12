@@ -1,4 +1,4 @@
-import { db, type Workout } from './index'
+import { db, type Workout, type Exercise } from './index'
 import { toDateKey } from '../lib/dates'
 
 export async function getAllWorkouts(): Promise<Workout[]> {
@@ -94,4 +94,63 @@ export async function toggleExerciseInLog(
       completedExercises: [exerciseIndex],
     })
   }
+}
+
+// ---- Extra exercises (day-specific, not in template) ----
+
+/** Add an extra exercise to a workout log for a specific day */
+export async function addExtraExercise(
+  workoutId: number,
+  date: Date,
+  exercise: Exercise
+): Promise<void> {
+  const existing = await getLogForDate(workoutId, date)
+
+  if (existing) {
+    const extras = [...(existing.extraExercises || []), exercise]
+    await db.workoutLogs.update(existing.id!, { extraExercises: extras })
+  } else {
+    await db.workoutLogs.add({
+      workoutId,
+      completedAt: new Date(toDateKey(date) + 'T12:00:00'),
+      extraExercises: [exercise],
+    })
+  }
+}
+
+/** Remove an extra exercise by index from a workout log */
+export async function removeExtraExercise(
+  workoutId: number,
+  date: Date,
+  extraIndex: number
+): Promise<void> {
+  const existing = await getLogForDate(workoutId, date)
+  if (!existing) return
+
+  const extras = [...(existing.extraExercises || [])]
+  extras.splice(extraIndex, 1)
+
+  const completedExtras = new Set(existing.completedExtras || [])
+  completedExtras.delete(extraIndex)
+  // Re-index completed extras after removal
+  const reindexed = [...completedExtras].filter((i) => i < extras.length)
+
+  await db.workoutLogs.update(existing.id!, {
+    extraExercises: extras,
+    completedExtras: reindexed,
+  })
+}
+
+/** Toggle completion of an extra exercise */
+export async function toggleExtraExercise(
+  workoutId: number,
+  date: Date,
+  extraIndex: number
+): Promise<void> {
+  const existing = await getLogForDate(workoutId, date)
+  if (!existing) return
+
+  const completed = new Set(existing.completedExtras || [])
+  completed.has(extraIndex) ? completed.delete(extraIndex) : completed.add(extraIndex)
+  await db.workoutLogs.update(existing.id!, { completedExtras: [...completed] })
 }
