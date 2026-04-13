@@ -166,27 +166,29 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 const done = habit.id != null && isHabitDone(habit.id)
                 const toggling = habit.id != null && pendingHabitToggles.has(habit.id)
                 return (
-                  <li key={habit.id} className="flex items-center gap-3 border-t border-border px-4 py-3 dark:border-border-dark">
+                  <li key={habit.id} className="border-t border-border dark:border-border-dark">
                     <button
                       onClick={() => habit.id != null && handleHabitToggle(habit.id)}
                       disabled={toggling}
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-background dark:active:bg-background-dark"
+                    >
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
                         done
                           ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
-                          : 'border-border hover:border-ink-light dark:border-border-dark dark:hover:border-gray-500'
-                      } ${toggling ? 'opacity-50' : 'active:scale-90'}`}
-                    >
-                      {done && (
-                        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
+                          : 'border-border dark:border-border-dark'
+                      } ${toggling ? 'opacity-50' : ''}`}>
+                        {done && (
+                          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={`flex-1 text-base transition-colors ${
+                        done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
+                      }`}>
+                        {habit.name}
+                      </span>
                     </button>
-                    <span className={`flex-1 text-base transition-colors ${
-                      done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
-                    }`}>
-                      {habit.name}
-                    </span>
                   </li>
                 )
               })}
