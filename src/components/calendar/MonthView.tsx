@@ -81,7 +81,7 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
                 {scheduledHabits.map((h) => {
                   const done = h.id != null && completedHabitIds.has(h.id)
                   return (
-                    <p key={h.id} className={`truncate text-[8px] leading-tight ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                    <p key={h.id} className={`truncate text-[10px] leading-snug ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
                       {h.name}
                     </p>
                   )
@@ -91,7 +91,7 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
                 {scheduledWorkouts.map((w) => {
                   const done = w.id != null && isWorkoutDone(w)
                   return (
-                    <p key={w.id} className={`truncate text-[8px] leading-tight ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                    <p key={w.id} className={`truncate text-[10px] leading-snug ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
                       {w.name}
                     </p>
                   )
@@ -99,7 +99,7 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
 
                 {/* Activities */}
                 {activities.map((a) => (
-                  <p key={a.stravaId} className="truncate text-[8px] leading-tight text-muted line-through">
+                  <p key={a.stravaId} className="truncate text-[10px] leading-snug text-muted line-through">
                     {a.type} {formatDistance(a.distanceMeters)}
                   </p>
                 ))}
