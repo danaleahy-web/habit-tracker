@@ -174,7 +174,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                         </svg>
                       )}
                     </button>
-                    <span className="text-sm text-ink-light dark:text-gray-400">{habit.emoji}</span>
                     <span className={`flex-1 text-base transition-colors ${
                       done ? 'text-muted line-through' : 'text-ink dark:text-gray-200'
                     }`}>

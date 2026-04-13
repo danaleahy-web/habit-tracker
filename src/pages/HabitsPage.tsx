@@ -106,7 +106,7 @@ export function HabitsPage() {
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted">Habits</h2>
           <ul className="space-y-1.5">
             {activeHabits.map((h) => (
-              <ItemCard key={`h-${h.id}`} symbol={h.emoji} name={h.name}
+              <ItemCard key={`h-${h.id}`} name={h.name}
                 subtitle={habitLabel(h)}
                 onEdit={() => { setEditingHabit(h); setHabitModalOpen(true) }}
                 onArchive={() => handleArchive('habit', h.id!)}
@@ -148,7 +148,6 @@ export function HabitsPage() {
                 <li key={`${item._kind}-${item.id}`}
                   className="flex items-center justify-between border-b border-border px-1 py-2.5 opacity-50 dark:border-border-dark">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-ink-light">{item.emoji}</span>
                     <span className="text-sm text-ink-light line-through dark:text-gray-500">{item.name}</span>
                   </div>
                   <div className="flex gap-2">
@@ -227,15 +226,14 @@ export function HabitsPage() {
   )
 }
 
-function ItemCard({ symbol, name, subtitle, onEdit, onArchive, onDelete }: {
-  symbol: string; name: string; subtitle: string
+function ItemCard({ name, subtitle, onEdit, onArchive, onDelete }: {
+  name: string; subtitle: string
   onEdit: () => void; onArchive: () => void; onDelete: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <li className="border-b border-border dark:border-border-dark">
       <button onClick={() => setExpanded((v) => !v)} className="flex w-full items-center gap-3 px-1 py-3 text-left">
-        <span className="text-base text-ink dark:text-gray-300">{symbol}</span>
         <div className="flex-1">
           <p className="text-sm font-medium text-ink dark:text-gray-100">{name}</p>
           <p className="text-xs text-muted">{subtitle}</p>

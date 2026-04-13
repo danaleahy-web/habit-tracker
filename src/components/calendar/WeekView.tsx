@@ -86,8 +86,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                   {scheduledHabits.map((habit) => {
                     const done = habit.id != null && completedHabitIds.has(habit.id)
                     return (
-                      <div key={habit.id} className="flex items-center gap-1.5 truncate">
-                        <span className={`text-xs ${done ? 'text-accent' : 'text-ink dark:text-gray-400'}`}>{habit.emoji}</span>
+                      <div key={habit.id} className="truncate">
                         <span className={`truncate text-xs ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
                           {habit.name}
                         </span>

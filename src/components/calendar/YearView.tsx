@@ -73,7 +73,7 @@ export function YearView({ date, data, onSelectDay }: YearViewProps) {
       const tone = HABIT_TONES[colorIdx]
       allRows.push({
         key: `habit-${habit.id}`,
-        label: `${habit.emoji}  ${habit.name}`,
+        label: habit.name,
         hex: tone.hex, bg: tone.bg,
         daySet: habitDaySets.get(habit.id!) || new Set(),
       })

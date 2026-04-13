@@ -2,11 +2,6 @@ import { useState, useEffect } from 'react'
 import type { Habit } from '../db/index'
 import { toDateKey } from '../lib/dates'
 
-const ICON_OPTIONS = [
-  '●', '○', '◆', '◇', '■', '□', '▲', '△',
-  '★', '☆', '✦', '✧', '◉', '◎', '▪', '▫',
-  '⬡', '⬢', '◈', '✕', '⊕', '⊗', '⊙', '◬',
-]
 
 const FLEX_FREQUENCY_OPTIONS = [
   { value: 7, label: 'Daily' },
@@ -40,7 +35,6 @@ interface HabitFormModalProps {
 
 export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalProps) {
   const [name, setName] = useState('')
-  const [icon, setIcon] = useState('●')
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('specific')
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
   const [flexFrequency, setFlexFrequency] = useState(3)
@@ -51,7 +45,6 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
   useEffect(() => {
     if (open) {
       setName(habit?.name ?? '')
-      setIcon(habit?.emoji ?? '●')
 
       // Schedule mode
       if (habit?.scheduledDays && habit.scheduledDays.length > 0) {
@@ -106,7 +99,7 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
 
     const base: HabitFormData = {
       name: name.trim(),
-      emoji: icon,
+      emoji: '●',
       frequencyPerWeek: scheduleMode === 'specific' ? [...selectedDays].length : flexFrequency,
       scheduledDays: scheduleMode === 'specific' ? [...selectedDays].sort() : [],
       startDate: startDate ? new Date(startDate + 'T00:00:00') : undefined,
@@ -136,21 +129,6 @@ export function HabitFormModal({ open, onClose, onSave, habit }: HabitFormModalP
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Drink 8 glasses of water" autoFocus
               className="w-full rounded-lg border border-border bg-paper px-4 py-3 text-base text-ink outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
-          </div>
-
-          {/* Symbol */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold uppercase tracking-wider text-muted">Symbol</label>
-            <div className="flex flex-wrap gap-1.5">
-              {ICON_OPTIONS.map((s) => (
-                <button key={s} type="button" onClick={() => setIcon(s)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md text-base transition-all ${
-                    icon === s
-                      ? 'bg-ink text-paper dark:bg-gray-200 dark:text-gray-900'
-                      : 'bg-background text-ink-light hover:bg-border dark:bg-background-dark dark:text-gray-400'
-                  }`}>{s}</button>
-              ))}
-            </div>
           </div>
 
           {/* Schedule */}
