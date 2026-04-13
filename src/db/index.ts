@@ -81,6 +81,7 @@ export interface JournalNote {
   id?: number
   date: Date
   content: string
+  completed?: boolean
   createdAt: Date
 }
 

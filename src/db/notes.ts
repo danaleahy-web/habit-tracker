@@ -1,28 +1,22 @@
-import { db, type JournalNote } from './index'
+import { db } from './index'
 import { toDateKey } from '../lib/dates'
 
-export async function getNotesForDate(date: Date): Promise<JournalNote[]> {
-  const dayKey = toDateKey(date)
-  const dayStart = new Date(dayKey)
-  const dayEnd = new Date(dayKey + 'T23:59:59')
-  return db.journalNotes
-    .where('date')
-    .between(dayStart, dayEnd, true, true)
-    .toArray()
-}
-
-export async function addNote(date: Date, content: string): Promise<number> {
+export async function addTask(date: Date, content: string): Promise<number> {
   return db.journalNotes.add({
     date: new Date(toDateKey(date) + 'T12:00:00'),
     content,
+    completed: false,
     createdAt: new Date(),
   }) as Promise<number>
 }
 
-export async function updateNote(id: number, content: string): Promise<void> {
-  await db.journalNotes.update(id, { content })
+export async function toggleTask(id: number): Promise<void> {
+  const task = await db.journalNotes.get(id)
+  if (task) {
+    await db.journalNotes.update(id, { completed: !task.completed })
+  }
 }
 
-export async function deleteNote(id: number): Promise<void> {
+export async function deleteTask(id: number): Promise<void> {
   await db.journalNotes.delete(id)
 }

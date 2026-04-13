@@ -34,6 +34,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
         const completions = data.completions.get(key) || []
         const workoutLogs = data.workoutLogs.get(key) || []
         const activities = data.activities.get(key) || []
+        const dayTasks = data.notes.get(key) || []
         const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, day))
         const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, day))
         const completedHabitIds = new Set(completions.map((c) => c.habitId))
@@ -117,9 +118,22 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                 </div>
               )}
 
+              {/* Tasks */}
+              {dayTasks.length > 0 && (
+                <div className={(scheduledHabits.length > 0 || scheduledWorkouts.length > 0) ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
+                  {dayTasks.map((task) => (
+                    <div key={task.id} className="truncate">
+                      <span className={`truncate text-xs ${task.completed ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                        {task.content}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Activities (always "done" since they're completed Strava activities) */}
               {activities.length > 0 && (
-                <div className={(scheduledHabits.length > 0 || scheduledWorkouts.length > 0) ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
+                <div className={(scheduledHabits.length > 0 || scheduledWorkouts.length > 0 || dayTasks.length > 0) ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
                   {activities.map((a) => (
                     <div key={a.stravaId} className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-xs text-muted line-through">{a.name}</span>
@@ -129,7 +143,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                 </div>
               )}
 
-              {scheduledHabits.length === 0 && scheduledWorkouts.length === 0 && activities.length === 0 && (
+              {scheduledHabits.length === 0 && scheduledWorkouts.length === 0 && dayTasks.length === 0 && activities.length === 0 && (
                 <p className="text-xs text-muted">—</p>
               )}
             </div>

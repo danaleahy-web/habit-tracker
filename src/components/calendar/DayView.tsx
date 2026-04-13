@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
 import { toggleCompletion } from '../../db/habits'
 import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
+import { addTask, toggleTask, deleteTask } from '../../db/notes'
 import type { Exercise } from '../../db/index'
 import { formatExerciseDetail } from '../../lib/exercise'
 import { toDateKey, formatDayFull, isToday } from '../../lib/dates'
@@ -20,6 +21,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const completions = data.completions.get(key) || []
   const workoutLogs = data.workoutLogs.get(key) || []
   const activities = data.activities.get(key) || []
+  const dayTasks = data.notes.get(key) || []
   const completedHabitIds = new Set(completions.map((c) => c.habitId))
 
   // Filter to only items scheduled for this day
@@ -38,6 +40,9 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [extraName, setExtraName] = useState('')
   const [extraSets, setExtraSets] = useState(3)
   const [extraReps, setExtraReps] = useState(10)
+  const [showTaskInput, setShowTaskInput] = useState(false)
+  const [taskText, setTaskText] = useState('')
+  const [localTaskToggles, setLocalTaskToggles] = useState<Map<number, boolean>>(new Map())
 
   // Habit toggle
   const handleHabitToggle = async (habitId: number) => {
@@ -314,6 +319,84 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
             <p className="mt-1 text-xs text-muted">Head to the Plan tab to add some.</p>
           </div>
         )}
+
+        {/* Tasks */}
+        <div className="border-b border-border dark:border-border-dark">
+          <div className="flex items-center justify-between px-4 pt-3 pb-1">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">Tasks</h3>
+            {!showTaskInput && (
+              <button onClick={() => setShowTaskInput(true)}
+                className="text-xs text-accent underline underline-offset-2">+ Add</button>
+            )}
+          </div>
+
+          {dayTasks.length > 0 && (
+            <ul>
+              {dayTasks.map((task) => {
+                const isDone = localTaskToggles.has(task.id!) ? localTaskToggles.get(task.id!)! : !!task.completed
+                return (
+                  <li key={task.id} className="flex items-center border-t border-border dark:border-border-dark">
+                    <button onClick={() => {
+                        setLocalTaskToggles((prev) => new Map(prev).set(task.id!, !isDone))
+                        toggleTask(task.id!)
+                      }}
+                      className="flex flex-1 items-center gap-3 px-4 py-2.5 text-left active:bg-background dark:active:bg-background-dark">
+                      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
+                        isDone ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
+                          : 'border-border dark:border-border-dark'
+                      }`}>
+                        {isDone && (
+                          <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={`flex-1 text-sm transition-colors ${isDone ? 'text-muted line-through' : 'text-ink dark:text-gray-200'}`}>
+                        {task.content}
+                      </span>
+                    </button>
+                    <button onClick={() => { deleteTask(task.id!); onDataChange?.() }}
+                      className="px-3 py-2.5 text-xs text-red-400 hover:text-red-600">×</button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          {showTaskInput && (
+            <div className="border-t border-border px-4 py-2.5 dark:border-border-dark">
+              <div className="flex gap-2">
+                <input type="text" value={taskText} onChange={(e) => setTaskText(e.target.value)}
+                  placeholder="e.g. Call mom, Buy groceries" autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && taskText.trim()) {
+                      addTask(date, taskText.trim()).then(() => onDataChange?.())
+                      setTaskText(''); setShowTaskInput(false)
+                    }
+                  }}
+                  className="flex-1 rounded-md border border-border bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-accent dark:border-border-dark dark:bg-paper-dark dark:text-gray-100" />
+                <button onClick={() => {
+                    if (taskText.trim()) {
+                      addTask(date, taskText.trim()).then(() => onDataChange?.())
+                      setTaskText(''); setShowTaskInput(false)
+                    }
+                  }}
+                  disabled={!taskText.trim()}
+                  className="rounded-md bg-ink px-3 py-2 text-xs font-medium text-paper disabled:opacity-40 dark:bg-gray-200 dark:text-gray-900">
+                  Add
+                </button>
+                <button onClick={() => { setShowTaskInput(false); setTaskText('') }}
+                  className="text-xs text-muted">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {dayTasks.length === 0 && !showTaskInput && (
+            <div className="px-4 py-4 text-center">
+              <p className="text-xs text-muted">No tasks for today.</p>
+            </div>
+          )}
+        </div>
 
         {/* Strava Activities */}
         <div>

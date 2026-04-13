@@ -40,6 +40,7 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
           const completions = data.completions.get(key) || []
           const workoutLogs = data.workoutLogs.get(key) || []
           const activities = data.activities.get(key) || []
+          const dayTasks = data.notes.get(key) || []
           const completedHabitIds = new Set(completions.map((c) => c.habitId))
           const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, day))
           const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, day))
@@ -96,6 +97,13 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
                     </p>
                   )
                 })}
+
+                {/* Tasks */}
+                {dayTasks.map((task) => (
+                  <p key={task.id} className={`truncate text-[10px] leading-snug ${task.completed ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                    {task.content}
+                  </p>
+                ))}
 
                 {/* Activities */}
                 {activities.map((a) => (
