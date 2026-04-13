@@ -206,7 +206,7 @@ function RouteMap({ polyline }: { polyline: string }) {
       tiles.push({
         x: (tx - tileX0) * TILE_SIZE,
         y: (ty - tileY0) * TILE_SIZE,
-        url: `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`,
+        url: `https://tiles.stadiamaps.com/tiles/stamen_toner_lite/${zoom}/${tx}/${ty}.png`,
       })
     }
   }
@@ -220,23 +220,22 @@ function RouteMap({ polyline }: { polyline: string }) {
         ))}
 
         {/* Route line shadow */}
-        <path d={svgPath} fill="none" stroke="white" strokeWidth="5"
-          strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+        <path d={svgPath} fill="none" stroke="white" strokeWidth="6"
+          strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
 
         {/* Route line */}
-        <path d={svgPath} fill="none" stroke="#2d2a26" strokeWidth="3"
+        <path d={svgPath} fill="none" stroke="#2d2a26" strokeWidth="2.5"
           strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Start dot (green) */}
-        <circle cx={startX} cy={startY} r="6" fill="white" />
-        <circle cx={startX} cy={startY} r="4" fill="#22c55e" />
+        {/* Start dot */}
+        <circle cx={startX} cy={startY} r="5" fill="white" stroke="#2d2a26" strokeWidth="1.5" />
+        <circle cx={startX} cy={startY} r="2" fill="#2d2a26" />
 
-        {/* End dot (red) */}
-        <circle cx={endX} cy={endY} r="6" fill="white" />
-        <circle cx={endX} cy={endY} r="4" fill="#ef4444" />
+        {/* End dot */}
+        <circle cx={endX} cy={endY} r="5" fill="#2d2a26" />
       </svg>
-      <p className="bg-paper px-2 py-1 text-[8px] text-muted dark:bg-paper-dark">
-        © OpenStreetMap contributors
+      <p className="bg-paper px-2 py-0.5 text-[7px] text-muted dark:bg-paper-dark">
+        © Stadia Maps · © Stamen Design · © OpenStreetMap
       </p>
     </div>
   )
