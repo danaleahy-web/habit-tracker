@@ -29,7 +29,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, date))
   const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, date))
 
-  const [localHabitOverrides, setLocalHabitOverrides] = useState<Map<number, boolean>>(new Map())
+  const habitOverridesRef = useRef<Map<number, boolean>>(new Map())
   const expandedWorkoutRef = useRef<number | null>(null)
   const [, forceRender] = useState(0)
   const expandedWorkout = expandedWorkoutRef.current
@@ -47,15 +47,16 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [rescheduleTaskId, setRescheduleTaskId] = useState<number | null>(null)
   const [rescheduleDate, setRescheduleDate] = useState('')
 
-  // Habit toggle — optimistic local state
-  const handleHabitToggle = async (habitId: number) => {
+  // Habit toggle — ref-based optimistic state (survives all re-renders)
+  const handleHabitToggle = (habitId: number) => {
     const current = isHabitDone(habitId)
-    setLocalHabitOverrides((prev) => new Map(prev).set(habitId, !current))
-    await toggleCompletion(habitId, date)
+    habitOverridesRef.current = new Map(habitOverridesRef.current).set(habitId, !current)
+    forceRender((n) => n + 1)
+    toggleCompletion(habitId, date)
   }
 
   const isHabitDone = (habitId: number) => {
-    if (localHabitOverrides.has(habitId)) return localHabitOverrides.get(habitId)!
+    if (habitOverridesRef.current.has(habitId)) return habitOverridesRef.current.get(habitId)!
     return completedHabitIds.has(habitId)
   }
 
