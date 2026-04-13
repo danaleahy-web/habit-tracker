@@ -17,6 +17,13 @@ export async function toggleTask(id: number): Promise<void> {
   }
 }
 
+export async function rescheduleTask(id: number, newDate: Date): Promise<void> {
+  await db.journalNotes.update(id, {
+    date: new Date(toDateKey(newDate) + 'T12:00:00'),
+    completed: false,
+  })
+}
+
 export async function deleteTask(id: number): Promise<void> {
   await db.journalNotes.delete(id)
 }
