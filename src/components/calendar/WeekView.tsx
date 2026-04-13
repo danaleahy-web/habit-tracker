@@ -123,7 +123,7 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
                   {activities.map((a) => (
                     <div key={a.stravaId} className="flex items-baseline gap-2">
                       <span className="truncate text-xs text-muted line-through">{a.name}</span>
-                      <span className="shrink-0 text-[10px] text-muted">{formatDistance(a.distanceMeters)} · {formatDuration(a.movingTimeSecs)}</span>
+                      <span className="shrink-0 text-[10px] text-muted">{a.type} · {formatDistance(a.distanceMeters)} · {formatDuration(a.movingTimeSecs)}</span>
                     </div>
                   ))}
                 </div>
