@@ -67,8 +67,6 @@ export function CalendarPage() {
     })
   }, [viewMode])
 
-  const goToday = useCallback(() => setSelectedDate(new Date()), [])
-
   const swipeHandlers = useSwipe(goForward, goBack)
 
   const handleSelectDay = useCallback((date: Date) => {
@@ -119,12 +117,6 @@ export function CalendarPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto pb-2" {...swipeHandlers}>
-        {/* Floating Today button */}
-        <button onClick={goToday}
-          className="fixed bottom-14 right-3 z-50 rounded-md border border-border bg-paper px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink shadow-sm transition-all active:scale-95 dark:border-border-dark dark:bg-paper-dark dark:text-gray-200">
-          Today
-        </button>
-
         {data.loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-sm text-muted">Loading…</p>
