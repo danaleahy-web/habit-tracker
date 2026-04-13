@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Activity } from '../db/index'
-import { decodePolyline, polylineToSvgPath } from '../lib/polyline'
+import { decodePolyline } from '../lib/polyline'
 
 interface ActivityCardProps {
   activity: Activity
@@ -138,34 +138,106 @@ function StatCell({ label, value }: { label: string; value: string }) {
   )
 }
 
+/** Convert lat/lng to tile x/y at a given zoom level */
+function latLngToTile(lat: number, lng: number, zoom: number): [number, number] {
+  const n = Math.pow(2, zoom)
+  const x = ((lng + 180) / 360) * n
+  const latRad = (lat * Math.PI) / 180
+  const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
+  return [x, y]
+}
+
 function RouteMap({ polyline }: { polyline: string }) {
   const points = decodePolyline(polyline)
   if (points.length < 2) return null
 
-  const W = 320
-  const H = 180
-  const path = polylineToSvgPath(points, W, H, 12)
+  const lats = points.map((p) => p[0])
+  const lngs = points.map((p) => p[1])
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const minLng = Math.min(...lngs)
+  const maxLng = Math.max(...lngs)
+
+  // Find zoom level that fits the bounds in ~3-4 tiles
+  let zoom = 15
+  for (let z = 16; z >= 1; z--) {
+    const [x1] = latLngToTile(maxLat, minLng, z)
+    const [x2] = latLngToTile(minLat, maxLng, z)
+    const [, y1] = latLngToTile(maxLat, minLng, z)
+    const [, y2] = latLngToTile(minLat, maxLng, z)
+    if (Math.abs(x2 - x1) <= 3 && Math.abs(y2 - y1) <= 3) { zoom = z; break }
+  }
+
+  // Get tile range with 0.5 tile padding
+  const [txMin, tyMin] = latLngToTile(maxLat, minLng, zoom)
+  const [txMax, tyMax] = latLngToTile(minLat, maxLng, zoom)
+  const tileX0 = Math.floor(txMin - 0.3)
+  const tileX1 = Math.ceil(txMax + 0.3)
+  const tileY0 = Math.floor(tyMin - 0.3)
+  const tileY1 = Math.ceil(tyMax + 0.3)
+
+  const tilesW = tileX1 - tileX0
+  const tilesH = tileY1 - tileY0
+  const TILE_SIZE = 256
+  const imgW = tilesW * TILE_SIZE
+  const imgH = tilesH * TILE_SIZE
+
+  // Convert lat/lng to pixel position on the tile grid
+  const toPixel = (lat: number, lng: number): [number, number] => {
+    const [tx, ty] = latLngToTile(lat, lng, zoom)
+    return [(tx - tileX0) * TILE_SIZE, (ty - tileY0) * TILE_SIZE]
+  }
+
+  // Build SVG path from points
+  const svgPath = points
+    .map((p, i) => {
+      const [x, y] = toPixel(p[0], p[1])
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+
+  const [startX, startY] = toPixel(points[0][0], points[0][1])
+  const [endX, endY] = toPixel(points[points.length - 1][0], points[points.length - 1][1])
+
+  // Generate tile URLs
+  const tiles: { x: number; y: number; url: string }[] = []
+  for (let ty = tileY0; ty < tileY1; ty++) {
+    for (let tx = tileX0; tx < tileX1; tx++) {
+      tiles.push({
+        x: (tx - tileX0) * TILE_SIZE,
+        y: (ty - tileY0) * TILE_SIZE,
+        url: `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`,
+      })
+    }
+  }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background dark:border-border-dark dark:bg-background-dark">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" preserveAspectRatio="xMidYMid meet">
-        <path
-          d={path}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-ink dark:text-gray-400"
-        />
-        {/* Start dot */}
-        {points.length > 0 && (() => {
-          const startPts = polylineToSvgPath([points[0], points[0]], W, H, 12)
-          const [, coords] = startPts.split('M')[1]?.split('L') ?? ['', '']
-          const [x, y] = (coords || startPts.replace('M', '')).split(',').map(Number)
-          return <circle cx={x || 0} cy={y || 0} r="4" className="fill-accent" />
-        })()}
+    <div className="overflow-hidden rounded-lg border border-border dark:border-border-dark">
+      <svg viewBox={`0 0 ${imgW} ${imgH}`} className="h-auto w-full" preserveAspectRatio="xMidYMid meet">
+        {/* Map tiles */}
+        {tiles.map((t, i) => (
+          <image key={i} href={t.url} x={t.x} y={t.y} width={TILE_SIZE} height={TILE_SIZE} />
+        ))}
+
+        {/* Route line shadow */}
+        <path d={svgPath} fill="none" stroke="white" strokeWidth="5"
+          strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+
+        {/* Route line */}
+        <path d={svgPath} fill="none" stroke="#2d2a26" strokeWidth="3"
+          strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Start dot (green) */}
+        <circle cx={startX} cy={startY} r="6" fill="white" />
+        <circle cx={startX} cy={startY} r="4" fill="#22c55e" />
+
+        {/* End dot (red) */}
+        <circle cx={endX} cy={endY} r="6" fill="white" />
+        <circle cx={endX} cy={endY} r="4" fill="#ef4444" />
       </svg>
+      <p className="bg-paper px-2 py-1 text-[8px] text-muted dark:bg-paper-dark">
+        © OpenStreetMap contributors
+      </p>
     </div>
   )
 }
