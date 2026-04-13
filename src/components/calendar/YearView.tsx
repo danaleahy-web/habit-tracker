@@ -154,9 +154,9 @@ export function YearView({ date, data }: YearViewProps) {
             {monthlyActivity.map((count, mi) => (
               <div key={mi} className="flex flex-1 flex-col items-center gap-1">
                 <span className="text-[9px] font-semibold text-muted">{count || ''}</span>
-                <div className="w-full rounded-sm bg-border dark:bg-border-dark" style={{ height: '80px' }}>
-                  <div className={`w-full rounded-sm transition-all ${mi === bestMonthIdx ? 'bg-accent' : 'bg-ink dark:bg-gray-400'}`}
-                    style={{ height: `${(count / maxMonthly) * 100}%`, marginTop: `${100 - (count / maxMonthly) * 100}%` }} />
+                <div className="flex w-full flex-col justify-end rounded-sm bg-border dark:bg-border-dark" style={{ height: '80px' }}>
+                  <div className={`w-full rounded-sm ${mi === bestMonthIdx ? 'bg-accent' : 'bg-ink dark:bg-gray-400'}`}
+                    style={{ height: `${Math.max(count > 0 ? 4 : 0, (count / maxMonthly) * 100)}%` }} />
                 </div>
                 <span className="text-[8px] text-muted">{MONTH_NAMES_SHORT[mi][0]}</span>
               </div>
