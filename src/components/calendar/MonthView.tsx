@@ -1,11 +1,16 @@
 import type { CalendarData } from '../../hooks/useCalendarData'
-import type { HabitCompletion, Activity } from '../../db/index'
 import { getMonthGrid, toDateKey, isToday, isSameMonth, DAY_NAMES_SHORT } from '../../lib/dates'
+import { isScheduledForDate } from '../../lib/schedule'
 
 interface MonthViewProps {
   date: Date
   data: CalendarData
   onSelectDay: (date: Date) => void
+}
+
+function formatDistance(meters: number): string {
+  const km = meters / 1000
+  return km >= 1 ? `${km.toFixed(1)}km` : `${Math.round(meters)}m`
 }
 
 export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
@@ -20,111 +25,89 @@ export function MonthView({ date, data, onSelectDay }: MonthViewProps) {
       {/* Day-of-week headers */}
       <div className="grid grid-cols-7">
         {DAY_NAMES_SHORT.map((name) => (
-          <div key={name} className="py-1.5 text-center text-[10px] font-semibold uppercase tracking-wider text-muted">
+          <div key={name} className="py-1.5 text-center text-xs font-semibold uppercase tracking-wider text-muted">
             {name}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid — each week row stretches equally to fill height */}
+      {/* Calendar grid */}
       <div className="grid flex-1 grid-cols-7">
         {weeks.flat().map((day) => {
           const key = toDateKey(day)
+          const today = isToday(day)
+          const inMonth = isSameMonth(day, date)
+          const completions = data.completions.get(key) || []
+          const workoutLogs = data.workoutLogs.get(key) || []
+          const activities = data.activities.get(key) || []
+          const completedHabitIds = new Set(completions.map((c) => c.habitId))
+          const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, day))
+          const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, day))
+
+          // Workout done check (same logic as weekly view)
+          const isWorkoutDone = (w: typeof data.workouts[0]) => {
+            const log = workoutLogs.find((l) => l.workoutId === w.id)
+            if (!log) return false
+            const completedSet = new Set(log.completedExercises || [])
+            const templateDone = w.exercises.filter((_, i) => completedSet.has(i)).length
+            const extrasCompletedSet = new Set(log.completedExtras || [])
+            const extrasDone = (log.extraExercises || []).filter((_, i) => extrasCompletedSet.has(i)).length
+            const totalDone = templateDone + extrasDone
+            const totalEx = w.exercises.length + (log.extraExercises || []).length
+            if (totalEx === 0 || totalDone === 0) return false
+            return totalDone >= (w.minExercisesToComplete ?? totalEx)
+          }
+
           return (
-            <MonthDayCell
+            <button
               key={key}
-              date={day}
-              referenceDate={date}
-              completions={data.completions.get(key) || []}
-              activities={data.activities.get(key) || []}
-              onSelect={onSelectDay}
-              totalWeeks={weeks.length}
-            />
+              onClick={() => onSelectDay(day)}
+              className={`flex flex-col border-b border-r border-border px-1 pb-0.5 pt-1 text-left transition-colors dark:border-border-dark overflow-hidden ${
+                inMonth ? '' : 'opacity-20'
+              } ${today ? 'bg-ink/5 dark:bg-gray-100/10' : 'hover:bg-background dark:hover:bg-background-dark'}`}
+            >
+              {/* Day number */}
+              <span className={`mb-0.5 text-xs leading-none ${
+                today
+                  ? 'flex h-5 w-5 items-center justify-center rounded-full bg-ink font-bold text-paper dark:bg-gray-300 dark:text-gray-900'
+                  : inMonth ? 'text-ink-light dark:text-gray-300' : 'text-muted'
+              }`}>
+                {day.getDate()}
+              </span>
+
+              {/* Content */}
+              <div className="flex-1 space-y-0 overflow-hidden">
+                {/* Habits */}
+                {scheduledHabits.map((h) => {
+                  const done = h.id != null && completedHabitIds.has(h.id)
+                  return (
+                    <p key={h.id} className={`truncate text-[8px] leading-tight ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                      {h.name}
+                    </p>
+                  )
+                })}
+
+                {/* Workouts */}
+                {scheduledWorkouts.map((w) => {
+                  const done = w.id != null && isWorkoutDone(w)
+                  return (
+                    <p key={w.id} className={`truncate text-[8px] leading-tight ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-400'}`}>
+                      {w.name}
+                    </p>
+                  )
+                })}
+
+                {/* Activities */}
+                {activities.map((a) => (
+                  <p key={a.stravaId} className="truncate text-[8px] leading-tight text-muted line-through">
+                    {a.type} {formatDistance(a.distanceMeters)}
+                  </p>
+                ))}
+              </div>
+            </button>
           )
         })}
       </div>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-4 py-2 text-[10px] text-muted">
-        <span className="flex items-center gap-1.5">
-          <span className="block h-1.5 w-1.5 rounded-full bg-ink dark:bg-gray-400" />
-          Habit
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="text-xs text-accent">▪</span>
-          Activity
-        </span>
-      </div>
     </div>
-  )
-}
-
-/** Full-page day cell for the month grid */
-function MonthDayCell({
-  date,
-  referenceDate,
-  completions,
-  activities,
-  onSelect,
-}: {
-  date: Date
-  referenceDate: Date
-  completions: HabitCompletion[]
-  activities: Activity[]
-  onSelect: (date: Date) => void
-  totalWeeks: number
-}) {
-  const today = isToday(date)
-  const inMonth = isSameMonth(date, referenceDate)
-  const hasActivities = activities.length > 0
-  const uniqueHabits = [...new Set(completions.map((c) => c.habitId))]
-
-  return (
-    <button
-      onClick={() => onSelect(date)}
-      className={`
-        flex flex-col items-center justify-start gap-1 border-b border-r border-border
-        px-0.5 pb-1 pt-2 transition-colors
-        dark:border-border-dark
-        ${inMonth ? '' : 'opacity-20'}
-        ${today
-          ? 'bg-ink/5 dark:bg-gray-100/10'
-          : 'hover:bg-background dark:hover:bg-background-dark'
-        }
-      `}
-    >
-      {/* Day number */}
-      <span
-        className={`text-sm leading-none ${
-          today
-            ? 'flex h-6 w-6 items-center justify-center rounded-full bg-ink font-bold text-paper dark:bg-gray-300 dark:text-gray-900'
-            : inMonth
-              ? 'text-ink-light dark:text-gray-300'
-              : 'text-muted'
-        }`}
-      >
-        {date.getDate()}
-      </span>
-
-      {/* Habit dots */}
-      {uniqueHabits.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-[3px]">
-          {uniqueHabits.slice(0, 4).map((habitId) => (
-            <span
-              key={habitId}
-              className="block h-1.5 w-1.5 rounded-full bg-ink dark:bg-gray-400"
-            />
-          ))}
-          {uniqueHabits.length > 4 && (
-            <span className="text-[7px] leading-none text-muted">+</span>
-          )}
-        </div>
-      )}
-
-      {/* Activity marker */}
-      {hasActivities && (
-        <span className="text-[10px] leading-none text-accent">▪</span>
-      )}
-    </button>
   )
 }
