@@ -206,7 +206,7 @@ function RouteMap({ polyline }: { polyline: string }) {
       tiles.push({
         x: (tx - tileX0) * TILE_SIZE,
         y: (ty - tileY0) * TILE_SIZE,
-        url: `https://tiles.stadiamaps.com/tiles/stamen_toner_lite/${zoom}/${tx}/${ty}.png`,
+        url: `https://a.basemaps.cartocdn.com/light_nolabels/${zoom}/${tx}/${ty}.png`,
       })
     }
   }
@@ -235,7 +235,7 @@ function RouteMap({ polyline }: { polyline: string }) {
         <circle cx={endX} cy={endY} r="5" fill="#2d2a26" />
       </svg>
       <p className="bg-paper px-2 py-0.5 text-[7px] text-muted dark:bg-paper-dark">
-        © Stadia Maps · © Stamen Design · © OpenStreetMap
+        © CARTO · © OpenStreetMap
       </p>
     </div>
   )
