@@ -338,31 +338,33 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   )
 }
 
-/** Reusable exercise row with checkbox */
+/** Reusable exercise row — entire row toggles completion */
 function ExerciseRow({ name, detail, done, onToggle, onRemove }: {
   name: string; detail: string; done: boolean
   onToggle: () => void; onRemove?: () => void
 }) {
   return (
-    <li className="flex items-center gap-3 border-b border-border px-4 py-2.5 last:border-0 dark:border-border-dark">
+    <li className="flex items-center border-b border-border last:border-0 dark:border-border-dark">
       <button onClick={onToggle}
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all active:scale-90 ${
+        className="flex flex-1 items-center gap-3 px-4 py-2.5 text-left active:bg-background dark:active:bg-background-dark">
+        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
           done
             ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
-            : 'border-border hover:border-ink-light dark:border-border-dark'
+            : 'border-border dark:border-border-dark'
         }`}>
-        {done && (
-          <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
+          {done && (
+            <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+        <span className={`flex-1 text-sm transition-colors ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'}`}>
+          {name}
+        </span>
+        <span className={`text-xs ${done ? 'text-muted/50' : 'text-muted'}`}>{detail}</span>
       </button>
-      <span className={`flex-1 text-sm transition-colors ${done ? 'text-muted line-through' : 'text-ink-light dark:text-gray-300'}`}>
-        {name}
-      </span>
-      <span className={`text-[10px] ${done ? 'text-muted/50' : 'text-muted'}`}>{detail}</span>
       {onRemove && (
-        <button onClick={onRemove} className="text-xs text-red-400 hover:text-red-600">×</button>
+        <button onClick={(e) => { e.stopPropagation(); onRemove() }} className="px-3 py-2.5 text-xs text-red-400 hover:text-red-600">×</button>
       )}
     </li>
   )
