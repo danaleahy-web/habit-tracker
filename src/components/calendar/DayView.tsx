@@ -501,17 +501,18 @@ function SwipeableTaskRow({ content, done, onToggle, onDelete, onSwipeRight, onS
     const t = e.touches[0]
     const dx = t.clientX - touchStart.current.x
     const dy = t.clientY - touchStart.current.y
-    // Only start swiping if horizontal movement is dominant
     if (!swiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
       setSwiping(true)
     }
     if (swiping) {
+      e.stopPropagation()
       setOffsetX(dx)
     }
   }
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (swiping) {
+      e.stopPropagation()
       if (offsetX > 80) {
         onSwipeRight()
       } else if (offsetX < -80) {
@@ -527,7 +528,7 @@ function SwipeableTaskRow({ content, done, onToggle, onDelete, onSwipeRight, onS
   const revealText = offsetX > 40 ? 'Tomorrow →' : offsetX < -40 ? '← Pick date' : ''
 
   return (
-    <li className={`relative overflow-hidden border-t border-border dark:border-border-dark ${bgReveal}`}
+    <li data-swipeable className={`relative overflow-hidden border-t border-border dark:border-border-dark ${bgReveal}`}
       onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       {/* Reveal hint text */}
       {revealText && (

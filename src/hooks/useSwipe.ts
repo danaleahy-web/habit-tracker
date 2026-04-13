@@ -7,8 +7,7 @@ interface SwipeHandlers {
 
 /**
  * Detect horizontal swipe gestures on touch devices.
- * Requires a minimum distance and enforces that the swipe is
- * more horizontal than vertical (to avoid triggering on scroll).
+ * Ignores swipes that originated inside a [data-swipeable] element.
  */
 export function useSwipe(
   onSwipeLeft: () => void,
@@ -18,6 +17,12 @@ export function useSwipe(
   const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't capture if touch started inside a swipeable child
+    const target = e.target as HTMLElement
+    if (target.closest?.('[data-swipeable]')) {
+      touchStart.current = null
+      return
+    }
     const touch = e.touches[0]
     touchStart.current = { x: touch.clientX, y: touch.clientY }
   }, [])
@@ -30,13 +35,12 @@ export function useSwipe(
     const dy = touch.clientY - touchStart.current.y
     touchStart.current = null
 
-    // Only trigger if horizontal distance exceeds vertical (not a scroll)
     if (Math.abs(dx) < minDistance || Math.abs(dx) < Math.abs(dy)) return
 
     if (dx < 0) {
-      onSwipeLeft() // swipe left = go forward
+      onSwipeLeft()
     } else {
-      onSwipeRight() // swipe right = go back
+      onSwipeRight()
     }
   }, [onSwipeLeft, onSwipeRight, minDistance])
 
