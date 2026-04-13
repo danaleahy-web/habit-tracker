@@ -1,7 +1,7 @@
 {
-  "name": "HabitSync",
-  "short_name": "HabitSync",
-  "description": "Track habits and sync with Strava",
+  "name": "Cool Planner",
+  "short_name": "Cool Planner",
+  "description": "Plan habits, workouts, and tasks",
   "start_url": "/habit-tracker/",
   "scope": "/habit-tracker/",
   "display": "standalone",
