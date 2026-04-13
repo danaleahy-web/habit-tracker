@@ -121,9 +121,9 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
               {activities.length > 0 && (
                 <div className={(scheduledHabits.length > 0 || scheduledWorkouts.length > 0) ? 'mt-1 border-t border-border pt-1 dark:border-border-dark' : ''}>
                   {activities.map((a) => (
-                    <div key={a.stravaId} className="flex items-baseline gap-2">
+                    <div key={a.stravaId} className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-xs text-muted line-through">{a.name}</span>
-                      <span className="shrink-0 text-[10px] text-muted">{a.type} · {formatDistance(a.distanceMeters)} · {formatDuration(a.movingTimeSecs)}</span>
+                      <span className="shrink-0 text-right text-[10px] text-muted">{a.type} · {formatDistance(a.distanceMeters)} · {formatDuration(a.movingTimeSecs)}</span>
                     </div>
                   ))}
                 </div>
