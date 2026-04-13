@@ -156,11 +156,11 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
       <div className="flex-1 overflow-y-auto">
         {/* Habits */}
-        {scheduledHabits.length > 0 && (
-          <div className="border-b border-border dark:border-border-dark">
-            <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
-              Habits
-            </h3>
+        <div className="border-b border-border dark:border-border-dark">
+          <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
+            Habits
+          </h3>
+          {scheduledHabits.length > 0 ? (
             <ul>
               {scheduledHabits.map((habit) => {
                 const done = habit.id != null && isHabitDone(habit.id)
@@ -191,15 +191,19 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 )
               })}
             </ul>
-          </div>
-        )}
+          ) : (
+            <div className="px-4 py-4 text-center">
+              <p className="text-xs text-muted">No habits scheduled for today.</p>
+            </div>
+          )}
+        </div>
 
         {/* Workouts */}
-        {scheduledWorkouts.length > 0 && (
-          <div className="border-b border-border dark:border-border-dark">
-            <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
-              Workouts
-            </h3>
+        <div className="border-b border-border dark:border-border-dark">
+          <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
+            Workouts
+          </h3>
+          {scheduledWorkouts.length > 0 ? (
             <ul>
               {scheduledWorkouts.map((workout) => {
                 const wid = workout.id!
@@ -294,8 +298,12 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 )
               })}
             </ul>
-          </div>
-        )}
+          ) : (
+            <div className="px-4 py-4 text-center">
+              <p className="text-xs text-muted">No workouts scheduled for today.</p>
+            </div>
+          )}
+        </div>
 
         {/* Progress bar (habits + workouts combined) */}
         {totalItems > 0 && (
@@ -312,14 +320,6 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
                 style={{ width: `${(totalCompleted / totalItems) * 100}%` }}
               />
             </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {scheduledHabits.length === 0 && scheduledWorkouts.length === 0 && (
-          <div className="border-b border-border px-4 py-6 text-center dark:border-border-dark">
-            <p className="text-sm text-muted">No habits or workouts yet.</p>
-            <p className="mt-1 text-xs text-muted">Head to the Plan tab to add some.</p>
           </div>
         )}
 
