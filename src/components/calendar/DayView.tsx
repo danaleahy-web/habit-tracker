@@ -29,7 +29,7 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const scheduledHabits = data.habits.filter((h) => isScheduledForDate(h, date))
   const scheduledWorkouts = data.workouts.filter((w) => isScheduledForDate(w, date))
 
-  const [pendingHabitToggles, setPendingHabitToggles] = useState<Set<number>>(new Set())
+  const [localHabitOverrides, setLocalHabitOverrides] = useState<Map<number, boolean>>(new Map())
   const expandedWorkoutRef = useRef<number | null>(null)
   const [, forceRender] = useState(0)
   const expandedWorkout = expandedWorkoutRef.current
@@ -47,17 +47,16 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [rescheduleTaskId, setRescheduleTaskId] = useState<number | null>(null)
   const [rescheduleDate, setRescheduleDate] = useState('')
 
-  // Habit toggle
+  // Habit toggle — optimistic local state
   const handleHabitToggle = async (habitId: number) => {
-    if (pendingHabitToggles.has(habitId)) return
-    setPendingHabitToggles((prev) => new Set(prev).add(habitId))
-    try { await toggleCompletion(habitId, date) }
-    finally { setPendingHabitToggles((prev) => { const n = new Set(prev); n.delete(habitId); return n }) }
+    const current = isHabitDone(habitId)
+    setLocalHabitOverrides((prev) => new Map(prev).set(habitId, !current))
+    await toggleCompletion(habitId, date)
   }
 
   const isHabitDone = (habitId: number) => {
-    const dbState = completedHabitIds.has(habitId)
-    return pendingHabitToggles.has(habitId) ? !dbState : dbState
+    if (localHabitOverrides.has(habitId)) return localHabitOverrides.get(habitId)!
+    return completedHabitIds.has(habitId)
   }
 
   // Local optimistic state for exercise toggles (avoids re-render that collapses the workout)
@@ -164,19 +163,17 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
             <ul>
               {scheduledHabits.map((habit) => {
                 const done = habit.id != null && isHabitDone(habit.id)
-                const toggling = habit.id != null && pendingHabitToggles.has(habit.id)
                 return (
                   <li key={habit.id} className="border-t border-border dark:border-border-dark">
                     <button
                       onClick={() => habit.id != null && handleHabitToggle(habit.id)}
-                      disabled={toggling}
                       className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-background dark:active:bg-background-dark"
                     >
                       <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
                         done
                           ? 'border-ink bg-ink text-paper dark:border-gray-400 dark:bg-gray-400 dark:text-gray-900'
                           : 'border-border dark:border-border-dark'
-                      } ${toggling ? 'opacity-50' : ''}`}>
+                      }`}>
                         {done && (
                           <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M2 6l3 3 5-5" strokeLinecap="round" strokeLinejoin="round" />
