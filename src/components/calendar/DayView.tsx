@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import type { CalendarData } from '../../hooks/useCalendarData'
-import { toggleCompletion } from '../../db/habits'
-import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise } from '../../db/workouts'
+import { toggleCompletion, createHabit } from '../../db/habits'
+import { toggleExerciseInLog, addExtraExercise, removeExtraExercise, toggleExtraExercise, createWorkout } from '../../db/workouts'
+import { HabitFormModal, type HabitFormData } from '../HabitFormModal'
+import { WorkoutFormModal, type WorkoutFormData } from '../WorkoutFormModal'
 import { addTask, toggleTask, deleteTask, rescheduleTask } from '../../db/notes'
 import { addDays, toDateKey as toKey } from '../../lib/dates'
 import type { Exercise } from '../../db/index'
@@ -46,6 +48,8 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const [localTaskToggles, setLocalTaskToggles] = useState<Map<number, boolean>>(new Map())
   const [rescheduleTaskId, setRescheduleTaskId] = useState<number | null>(null)
   const [rescheduleDate, setRescheduleDate] = useState('')
+  const [showHabitModal, setShowHabitModal] = useState(false)
+  const [showWorkoutModal, setShowWorkoutModal] = useState(false)
 
   // Habit toggle — ref-based optimistic state (survives all re-renders)
   const handleHabitToggle = (habitId: number) => {
@@ -58,6 +62,19 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
   const isHabitDone = (habitId: number) => {
     if (habitOverridesRef.current.has(habitId)) return habitOverridesRef.current.get(habitId)!
     return completedHabitIds.has(habitId)
+  }
+
+  // Create habit/workout from day view
+  const handleCreateHabit = async (data: HabitFormData) => {
+    await createHabit(data)
+    setShowHabitModal(false)
+    onDataChange?.()
+  }
+
+  const handleCreateWorkout = async (data: WorkoutFormData) => {
+    await createWorkout(data)
+    setShowWorkoutModal(false)
+    onDataChange?.()
   }
 
   // Local optimistic state for exercise toggles (avoids re-render that collapses the workout)
@@ -157,9 +174,11 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
       <div className="flex-1 overflow-y-auto">
         {/* Habits */}
         <div className="border-b border-border dark:border-border-dark">
-          <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
-            Habits
-          </h3>
+          <div className="flex items-center justify-between px-4 pt-3 pb-1">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">Habits</h3>
+            <button onClick={() => setShowHabitModal(true)}
+              className="text-xs text-accent underline underline-offset-2">+ Add</button>
+          </div>
           {scheduledHabits.length > 0 ? (
             <ul>
               {scheduledHabits.map((habit) => {
@@ -200,9 +219,11 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
 
         {/* Workouts */}
         <div className="border-b border-border dark:border-border-dark">
-          <h3 className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted">
-            Workouts
-          </h3>
+          <div className="flex items-center justify-between px-4 pt-3 pb-1">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted">Workouts</h3>
+            <button onClick={() => setShowWorkoutModal(true)}
+              className="text-xs text-accent underline underline-offset-2">+ Add</button>
+          </div>
           {scheduledWorkouts.length > 0 ? (
             <ul>
               {scheduledWorkouts.map((workout) => {
@@ -444,6 +465,10 @@ export function DayView({ date, data, onDataChange }: DayViewProps) {
         </div>
 
       </div>
+
+      {/* Modals */}
+      <HabitFormModal open={showHabitModal} onClose={() => setShowHabitModal(false)} onSave={handleCreateHabit} />
+      <WorkoutFormModal open={showWorkoutModal} onClose={() => setShowWorkoutModal(false)} onSave={handleCreateWorkout} />
     </div>
   )
 }
