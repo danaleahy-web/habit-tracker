@@ -1,4 +1,10 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>
-      <rect width='512' height='512' fill='#f97316' rx='102.4'/>
-      <text x='50%' y='50%' text-anchor='middle' dominant-baseline='central' fill='white' font-size='179.2' font-family='sans-serif' font-weight='bold'>HS</text>
-    </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2d2a26"/>
+  <line x1="130" y1="180" x2="382" y2="180" stroke="#4a4640" stroke-width="3" stroke-linecap="round"/>
+  <line x1="130" y1="230" x2="382" y2="230" stroke="#4a4640" stroke-width="3" stroke-linecap="round"/>
+  <line x1="130" y1="280" x2="382" y2="280" stroke="#4a4640" stroke-width="3" stroke-linecap="round"/>
+  <line x1="130" y1="330" x2="382" y2="330" stroke="#4a4640" stroke-width="3" stroke-linecap="round"/>
+  <path d="M142 222 L164 244 L204 188" fill="none" stroke="#c4a882" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="290" y="270" text-anchor="middle" dominant-baseline="central" fill="#fdfcfa" font-family="Georgia, serif" font-size="120" font-weight="bold" letter-spacing="-4">CP</text>
+  <circle cx="370" cy="195" r="8" fill="#8b7355"/>
+</svg>

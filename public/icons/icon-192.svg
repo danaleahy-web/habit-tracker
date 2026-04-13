@@ -1,4 +1,14 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'>
-      <rect width='192' height='192' fill='#f97316' rx='38.400000000000006'/>
-      <text x='50%' y='50%' text-anchor='middle' dominant-baseline='central' fill='white' font-size='67.19999999999999' font-family='sans-serif' font-weight='bold'>HS</text>
-    </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="42" fill="#2d2a26"/>
+  <!-- Notebook lines -->
+  <line x1="40" y1="60" x2="152" y2="60" stroke="#4a4640" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="40" y1="82" x2="152" y2="82" stroke="#4a4640" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="40" y1="104" x2="152" y2="104" stroke="#4a4640" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="40" y1="126" x2="152" y2="126" stroke="#4a4640" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Checkmark bullet -->
+  <path d="M46 78 L56 88 L74 64" fill="none" stroke="#c4a882" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- CP text -->
+  <text x="108" y="100" text-anchor="middle" dominant-baseline="central" fill="#fdfcfa" font-family="Georgia, serif" font-size="52" font-weight="bold" letter-spacing="-2">CP</text>
+  <!-- Dot accent -->
+  <circle cx="148" cy="68" r="4" fill="#8b7355"/>
+</svg>
