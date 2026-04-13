@@ -24,6 +24,10 @@ export async function rescheduleTask(id: number, newDate: Date): Promise<void> {
   })
 }
 
+export async function getAllOutstandingTasks() {
+  return db.journalNotes.filter((n) => !n.completed).toArray()
+}
+
 export async function deleteTask(id: number): Promise<void> {
   await db.journalNotes.delete(id)
 }

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { BottomNav } from './components/BottomNav'
 import { CalendarPage } from './pages/CalendarPage'
 import { HabitsPage } from './pages/HabitsPage'
+import { TasksPage } from './pages/TasksPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<CalendarPage />} />
             <Route path="/plan" element={<HabitsPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
