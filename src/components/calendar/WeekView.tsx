@@ -42,12 +42,17 @@ export function WeekView({ date, data, onSelectDay }: WeekViewProps) {
         const isWorkoutDone = (w: typeof data.workouts[0]) => {
           const log = workoutLogs.find((l) => l.workoutId === w.id)
           if (!log) return false
-          const templateDone = (log.completedExercises || []).length
-          const extrasDone = (log.completedExtras || []).length
+          // Count actually completed template exercises (only indices that exist in the workout)
+          const completedSet = new Set(log.completedExercises || [])
+          const templateDone = w.exercises.filter((_, i) => completedSet.has(i)).length
+          const extrasCompletedSet = new Set(log.completedExtras || [])
+          const extraExCount = (log.extraExercises || []).length
+          const extrasDone = (log.extraExercises || []).filter((_, i) => extrasCompletedSet.has(i)).length
           const totalDone = templateDone + extrasDone
-          const totalEx = w.exercises.length + (log.extraExercises || []).length
+          const totalEx = w.exercises.length + extraExCount
+          if (totalEx === 0 || totalDone === 0) return false
           const required = w.minExercisesToComplete ?? totalEx
-          return totalEx > 0 && totalDone >= required
+          return totalDone >= required
         }
         const isLast = i === days.length - 1
 
