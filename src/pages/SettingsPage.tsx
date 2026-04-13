@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getSetting, setSetting } from '../db/settings'
+import { downloadBackup, importFromJson } from '../services/backup'
 import {
   startOAuth, exchangeToken, isStravaConnected, getAthleteName,
   disconnectStrava, syncActivities, getLastSyncTime, getLocalActivityCount,
@@ -17,6 +18,14 @@ export function SettingsPage() {
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [error, setError] = useState('')
   const [oauthProcessing, setOauthProcessing] = useState(false)
+
+  // Backup state
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<string>('')
+  const [confirmImport, setConfirmImport] = useState(false)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Credential form
   const [clientId, setClientId] = useState('')
@@ -136,6 +145,39 @@ export function SettingsPage() {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try { await downloadBackup() }
+    catch (err) { setError(err instanceof Error ? err.message : 'Export failed') }
+    finally { setExporting(false) }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPendingFile(file)
+    setConfirmImport(true)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleImportConfirm = async () => {
+    if (!pendingFile) return
+    setConfirmImport(false)
+    setImporting(true)
+    setImportResult('')
+    try {
+      const text = await pendingFile.text()
+      const result = await importFromJson(text)
+      const total = result.habits + result.workouts + result.habitCompletions + result.workoutLogs + result.activities + result.journalNotes
+      setImportResult(`Imported ${total} records (${result.habits} habits, ${result.workouts} workouts, ${result.activities} activities)`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setImporting(false)
+      setPendingFile(null)
+    }
+  }
+
   return (
     <div className="px-4 pb-4 pt-4">
       <h1 className="text-xl font-bold text-ink dark:text-gray-100">Settings</h1>
@@ -249,10 +291,54 @@ export function SettingsPage() {
       <div className="mt-5">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted">Data</h2>
         <div className="space-y-1">
-          <SettingsButton label="Export to JSON" desc="Download a backup of all your data" />
-          <SettingsButton label="Import from JSON" desc="Restore data from a backup file" />
+          <button onClick={handleExport} disabled={exporting}
+            className="flex w-full items-start gap-4 border-b border-border px-1 py-4 text-left transition-colors hover:bg-background dark:border-border-dark dark:hover:bg-background-dark disabled:opacity-50">
+            <div>
+              <p className="text-sm font-medium text-ink dark:text-gray-100">{exporting ? 'Exporting…' : 'Export to JSON'}</p>
+              <p className="mt-0.5 text-xs text-muted">Download a backup of all your data</p>
+            </div>
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} disabled={importing}
+            className="flex w-full items-start gap-4 border-b border-border px-1 py-4 text-left transition-colors hover:bg-background dark:border-border-dark dark:hover:bg-background-dark disabled:opacity-50">
+            <div>
+              <p className="text-sm font-medium text-ink dark:text-gray-100">{importing ? 'Importing…' : 'Import from JSON'}</p>
+              <p className="mt-0.5 text-xs text-muted">Restore data from a backup file</p>
+            </div>
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileSelect} className="hidden" />
         </div>
+        {importResult && (
+          <p className="mt-2 rounded-lg border border-border bg-paper px-3 py-2 text-xs text-ink-light dark:border-border-dark dark:bg-paper-dark dark:text-gray-400">
+            {importResult}
+          </p>
+        )}
       </div>
+
+      {/* Import confirmation */}
+      {confirmImport && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" onClick={() => { setConfirmImport(false); setPendingFile(null) }} />
+          <div className="relative mx-6 w-full max-w-sm rounded-2xl bg-paper p-6 shadow-xl dark:bg-paper-dark">
+            <h3 className="text-lg font-bold text-ink dark:text-gray-100">Import backup?</h3>
+            <p className="mt-2 text-sm text-muted">
+              This will replace all existing data with the contents of the backup file. This cannot be undone.
+            </p>
+            <p className="mt-1 text-xs text-ink-light dark:text-gray-400">
+              File: {pendingFile?.name}
+            </p>
+            <div className="mt-5 flex gap-3">
+              <button onClick={() => { setConfirmImport(false); setPendingFile(null) }}
+                className="flex-1 rounded-lg border border-border py-3 text-sm font-medium text-ink-light dark:border-border-dark dark:text-gray-400">
+                Cancel
+              </button>
+              <button onClick={handleImportConfirm}
+                className="flex-1 rounded-lg bg-ink py-3 text-sm font-semibold text-paper hover:bg-primary-dark active:scale-[0.98] dark:bg-gray-200 dark:text-gray-900">
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== Danger Zone ===== */}
       <div className="mt-5">
@@ -269,13 +355,3 @@ export function SettingsPage() {
   )
 }
 
-function SettingsButton({ label, desc }: { label: string; desc: string }) {
-  return (
-    <button className="flex w-full items-start gap-4 border-b border-border px-1 py-4 text-left transition-colors last:border-0 hover:bg-background dark:border-border-dark dark:hover:bg-background-dark">
-      <div>
-        <p className="text-sm font-medium text-ink dark:text-gray-100">{label}</p>
-        <p className="mt-0.5 text-xs text-muted">{desc}</p>
-      </div>
-    </button>
-  )
-}
